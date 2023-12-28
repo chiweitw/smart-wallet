@@ -16,15 +16,18 @@ contract Wallet is Proxiable, Slots, WalletStorage {
 
   function initialize(address[OWNER_LIMIT] memory _owners) external {
     require(initialized == false, "already initialized");
+    require(_owners.length > 1, "owners required must grater than 1");
+    require(_owners.length >= CONFIRMATION_NUM, "Num of confirmation is not sync with num of owner");
     admin = msg.sender;
     for (uint256 i=0; i < _owners.length; i++) {
-      owners[i] = _owners[i];
+      require(_owners[i]!=address(0),"Invalid Owner");
+      owners.push(_owners[i]);
     }
     initialized = true;
   }
 
   modifier onlyAdmin {
-    require(msg.sender == admin, "MultiSig: only admin");
+    require(msg.sender == admin, "Only Admin");
     _; 
   }
 
