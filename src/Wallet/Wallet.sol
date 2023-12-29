@@ -58,36 +58,35 @@ contract Wallet is Proxiable, Slots, WalletStorage {
 	// Multi-Sig
 	// Submit Transaction
 	function submitTransaction(address _to, uint _value, bytes memory _data) public onlyOwner {
-		uint txId = transactions.length;
-		transactions.push(Transaction({
+		transactions[txId] = Transaction({
 			to: _to,
 			value: _value,
 			data: _data,
 			executed: false,
-			confirmations[msg.sender]: true,
 			confirmationCount: 0
-        }));
+        });
+
+		txId++;
 
 		emit SubmitTransaction(msg.sender, txId, _to, _value, _data);
 	}
 
 	// Confirm Transaction
-	function confirmTransaction(uint txID) external onlyOwner {
+	function confirmTransaction(uint txId) external onlyOwner {
 		Transaction memory transaction = transactions[txId];
-		transaction.confirmations[msg.sender] = true;
 		transaction.confirmationCount++;
 
-		emit ConfirmTransaction(msg.sender, txID);
+		emit ConfirmTransaction(msg.sender, txId);
 
 	}
 	// Execute Transaction
-	function execute (uint txID) external onlyOwner {
-		Transaction memory transaction = transactions[txID];
-		require(transaction.confirmationCount >= CONFIRMATION_NUM, "Confirmations not enough.")
+	function execute (uint txId) external onlyOwner {
+		Transaction memory transaction = transactions[txId];
+		require(transaction.confirmationCount >= CONFIRMATION_NUM, "Confirmations not enough.");
 		transaction.executed = true;
-		(bool success,) = transaction.to.call{value: transaction.value}(transaction.value);
+		(bool success,) = transaction.to.call{value: transaction.value}(transaction.data);
 
 		require(success, "transaction failed");
-		emit ExecuteTransaction(msg.sender, txID);
+		emit ExecuteTransaction(msg.sender, txId);
 	}
 }

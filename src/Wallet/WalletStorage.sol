@@ -7,7 +7,6 @@ contract WalletStorage {
        uint value;
        bytes data;
        bool executed;
-       mapping(address => bool) confirmations;
 	   uint confirmationCount;
 	}
 
@@ -18,5 +17,6 @@ contract WalletStorage {
     // state variables
     address admin;
     mapping(address => bool) public owners;
-    Transaction[] public transactions;
+    mapping(uint => Transaction) public transactions;
+    uint public txId = 0;
 }
