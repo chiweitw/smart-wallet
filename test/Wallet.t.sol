@@ -5,6 +5,14 @@ import { Test, console } from "forge-std/Test.sol";
 import { HelperTest } from "./Helper.t.sol";
 
 contract WalletTest is HelperTest {
+    struct Transaction {
+       address to;
+       uint value;
+       bytes data;
+       bool executed;
+	   uint confirmationCount;
+	}
+
     function testReceive() public {
         uint amount = 0.01 ether;
         vm.prank(alice);
@@ -15,44 +23,51 @@ contract WalletTest is HelperTest {
 
     function testTransfer() public {
         vm.startPrank(alice);
-        wallet.execute(bob, 0.01 ether, "");
+        // submit Tx
+        uint256 txId = wallet.submitTransaction(bob, 0.01 ether, "");
+
+        // 1st confirmation
+        wallet.confirmTransaction(txId);
+
+        vm.expectRevert("Confirmations not enough.");
+        wallet.executeTransaction(txId);
+        vm.stopPrank();
+
+        // 2nd confirmation and execute again
+        vm.prank(bob);
+        wallet.confirmTransaction(txId);
+
+        vm.prank(alice);
+        wallet.executeTransaction(txId);
+
+        // execute Tx
+        // wallet.execute(bob, 0.01 ether, "");
         assertEq(bob.balance, initBalance + 0.01 ether);
         assertEq(address(wallet).balance, initBalance - 0.01 ether);
-        vm.stopPrank();
+        
     }
 
     function testTransferERC20() public {
         vm.startPrank(alice);
         bytes memory data = abi.encodeWithSignature("transfer(address,uint256)", bob, 1e18);
-        wallet.execute(address(testErc20), 0, data);
+
+        // submit Tx
+        uint256 txId = wallet.submitTransaction(address(testErc20), 0, data);
+        // 1st confirmation
+        wallet.confirmTransaction(txId);
+        vm.expectRevert("Confirmations not enough.");
+        wallet.executeTransaction(txId);
+        vm.stopPrank();
+
+        // 2nd confirmation and execute again
+        vm.prank(bob);
+        wallet.confirmTransaction(txId);
+
+        vm.prank(alice);
+        wallet.executeTransaction(txId);
+
+        // wallet.execute(address(testErc20), 0, data);
         assertEq(testErc20.balanceOf(bob), initERC20Balance + 1e18);
         assertEq(testErc20.balanceOf(address(wallet)), initERC20Balance - 1e18);
-        vm.stopPrank();
-    }
-
-    function testSubmitTransaction() public {
-        // Todo:
-        // Submit transaction
-        // Check TxId
-        // Check confirmation_count is 0
-        // expect emit SubmitTransaction event
-    }
-
-    function testConfirmTransaction() public {
-        // Todo:
-        // Confirm transaction
-        // 1st Confirm...
-        // Check confirmation_count is 1
-        // expect emit ConfirmTransaction event
-    }
-
-    function testExecuteTransaction() public {
-        // Todo:
-        // Execute transaction
-        // Submit Tx
-        // 1st confirm and execute
-        // expect to revert
-        // 2nd confirm and execute
-        // expect emit ExecuteTransaction event
     }
 }

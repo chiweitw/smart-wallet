@@ -25,6 +25,11 @@ contract Wallet is Proxiable, Slots, WalletStorage {
 		_;
 	}
 
+	modifier onlyOwnerOrEntryPoint {
+		require(msg.sender == address(_entryPoint) || owners[msg.sender], "account: not Owner or EntryPoint");
+		_;
+	}
+
 	constructor(IEntryPoint anEntryPoint) {
 		_entryPoint = anEntryPoint;
 	}
@@ -56,14 +61,8 @@ contract Wallet is Proxiable, Slots, WalletStorage {
 		}
 	}
 
-    // Require the function call went through EntryPoint or owner
-    function _requireFromEntryPointOrOwner() internal view {
-        require(msg.sender == address(_entryPoint) || owners[msg.sender], "account: not Owner or EntryPoint");
-    }
-
 	// execute a transaction (called directly from owner, or by entryPoint)
-    function execute(address dest, uint256 value, bytes calldata func) external {
-        _requireFromEntryPointOrOwner();
+    function execute(address dest, uint256 value, bytes calldata func) external onlyOwnerOrEntryPoint {
         _call(dest, value, func);
     }
 
@@ -78,7 +77,8 @@ contract Wallet is Proxiable, Slots, WalletStorage {
 
 	// Multi-Sig
 	// Submit Transaction
-	function submitTransaction(address _to, uint _value, bytes memory _data) public onlyOwner {
+	function submitTransaction(address _to, uint _value, bytes memory _data) public onlyOwner returns (uint txId) {
+		uint256 currentTxId = txId;
 		transactions[txId] = Transaction({
 			to: _to,
 			value: _value,
@@ -90,24 +90,26 @@ contract Wallet is Proxiable, Slots, WalletStorage {
 		txId++;
 
 		emit SubmitTransaction(msg.sender, txId, _to, _value, _data);
+
+		return currentTxId;
 	}
 
 	// Confirm Transaction
 	function confirmTransaction(uint txId) external onlyOwner {
-		Transaction memory transaction = transactions[txId];
+		Transaction storage transaction = transactions[txId];
 		transaction.confirmationCount++;
 
 		emit ConfirmTransaction(msg.sender, txId);
 
 	}
 	// Execute Transaction
-	function execute (uint txId) external onlyOwner {
+	function executeTransaction (uint txId) external onlyOwner {
 		Transaction memory transaction = transactions[txId];
 		require(transaction.confirmationCount >= CONFIRMATION_NUM, "Confirmations not enough.");
-		transaction.executed = true;
 		(bool success,) = transaction.to.call{value: transaction.value}(transaction.data);
 
 		require(success, "transaction failed");
+		transaction.executed = true;
 		emit ExecuteTransaction(msg.sender, txId);
 	}
 
