@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import { IEntryPoint } from "account-abstraction/interfaces/IEntryPoint.sol";
+
 contract WalletStorage {
     struct Transaction {
        address to;
@@ -15,6 +17,7 @@ contract WalletStorage {
     uint256 public constant CONFIRMATION_NUM = 2;
 
     // state variables
+    IEntryPoint public entryPoint;
     address admin;
     mapping(address => bool) public owners;
     mapping(uint => Transaction) public transactions;

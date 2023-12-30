@@ -2,12 +2,9 @@
 pragma solidity ^0.8.17;
 
 import { Test, console } from "forge-std/Test.sol";
+import { HelperTest } from "./Helper.t.sol";
 
-contract WalletTest is Test {
-    function setUp() public {
-        
-    }
-
+contract WalletTest is HelperTest {
     function testSubmitTransaction() public {
         // Todo:
         // Submit transaction

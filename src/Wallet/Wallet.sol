@@ -6,6 +6,7 @@ import { console } from "forge-std/Test.sol";
 import { Proxiable } from "../utils/Proxiable.sol";
 import { Slots } from "../utils/Slots.sol";
 import { WalletStorage } from "./WalletStorage.sol";
+import { IEntryPoint } from "account-abstraction/interfaces/IEntryPoint.sol";
 
 contract Wallet is Proxiable, Slots, WalletStorage {
 	bool public initialized;
@@ -24,11 +25,11 @@ contract Wallet is Proxiable, Slots, WalletStorage {
 		_;
 	}
 
-	function VERSION() external view virtual returns (string memory) {
-		return "0.0.1";
+	constructor(IEntryPoint anEntryPoint) {
+		 entryPoint = anEntryPoint;
 	}
 
-	function initialize(address[OWNER_LIMIT] memory _owners) external {
+	function initialize(address[] memory _owners) external {
 		require(initialized == false, "already initialized");
 		require(_owners.length > 1, "owners required must grater than 1");
 		require(_owners.length >= CONFIRMATION_NUM, "Num of confirmation is not sync with num of owner");
@@ -88,5 +89,9 @@ contract Wallet is Proxiable, Slots, WalletStorage {
 
 		require(success, "transaction failed");
 		emit ExecuteTransaction(msg.sender, txId);
+	}
+
+	function VERSION() external view virtual returns (string memory) {
+		return "0.0.1";
 	}
 }
