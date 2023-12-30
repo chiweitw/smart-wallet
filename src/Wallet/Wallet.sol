@@ -26,7 +26,7 @@ contract Wallet is Proxiable, Slots, WalletStorage {
 	}
 
 	modifier onlyOwnerOrEntryPoint {
-		require(msg.sender == address(_entryPoint) || owners[msg.sender], "account: not Owner or EntryPoint");
+		require(msg.sender == address(_entryPoint) || owners[msg.sender], "Not Owner or EntryPoint");
 		_;
 	}
 
@@ -103,7 +103,7 @@ contract Wallet is Proxiable, Slots, WalletStorage {
 
 	}
 	// Execute Transaction
-	function executeTransaction (uint txId) external onlyOwner {
+	function executeTransaction (uint txId) external onlyOwnerOrEntryPoint {
 		Transaction memory transaction = transactions[txId];
 		require(transaction.confirmationCount >= CONFIRMATION_NUM, "Confirmations not enough.");
 		(bool success,) = transaction.to.call{value: transaction.value}(transaction.data);

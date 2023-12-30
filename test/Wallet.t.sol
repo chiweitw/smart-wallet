@@ -44,7 +44,52 @@ contract WalletTest is HelperTest {
         // wallet.execute(bob, 0.01 ether, "");
         assertEq(bob.balance, initBalance + 0.01 ether);
         assertEq(address(wallet).balance, initBalance - 0.01 ether);
-        
+    }
+
+    function testTransferByEntryPoint() public {
+        vm.startPrank(alice);
+        // submit Tx
+        uint256 txId = wallet.submitTransaction(bob, 0.01 ether, "");
+
+        // 1st confirmation
+        wallet.confirmTransaction(txId);
+
+        vm.expectRevert("Confirmations not enough.");
+        wallet.executeTransaction(txId);
+        vm.stopPrank();
+
+        // 2nd confirmation and execute again
+        vm.prank(bob);
+        wallet.confirmTransaction(txId);
+
+        vm.prank(address(entryPoint));
+        wallet.executeTransaction(txId);
+
+        // execute Tx
+        // wallet.execute(bob, 0.01 ether, "");
+        assertEq(bob.balance, initBalance + 0.01 ether);
+        assertEq(address(wallet).balance, initBalance - 0.01 ether);
+    }
+
+    function testTransferByNotOwnerOrEntryPoint() public {
+        vm.startPrank(alice);
+        // submit Tx
+        uint256 txId = wallet.submitTransaction(bob, 0.01 ether, "");
+
+        // 1st confirmation
+        wallet.confirmTransaction(txId);
+
+        vm.expectRevert("Confirmations not enough.");
+        wallet.executeTransaction(txId);
+        vm.stopPrank();
+
+        // 2nd confirmation and execute again
+        vm.prank(bob);
+        wallet.confirmTransaction(txId);
+
+        vm.prank(someone);
+        vm.expectRevert("Not Owner or EntryPoint");
+        wallet.executeTransaction(txId);
     }
 
     function testTransferERC20() public {

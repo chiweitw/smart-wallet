@@ -17,7 +17,7 @@ contract HelperTest is Test {
 	address public alice;
 	address public bob;
 	address public carol;
-	address public receiver = makeAddr("receiver");
+	address public someone;
 
 	UUPSProxy proxy;
 	WalletFactory factory;
@@ -33,7 +33,7 @@ contract HelperTest is Test {
 		alice = makeAddr("alice");
 		bob = makeAddr("bob");
 		carol = makeAddr("carol");
-		receiver = makeAddr("receiver");
+		someone = makeAddr("someone");
 
 		// set owners
 		owners = [alice, bob, carol];
