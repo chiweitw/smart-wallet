@@ -1,3 +1,5 @@
+@openzeppelin/contracts/utils/=lib/openzeppelin-contracts/contracts/utils/
+@openzeppelin/contracts/security/=lib/openzeppelin-contracts/contracts/utils/
 @openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
 ds-test/=lib/forge-std/lib/ds-test/src/
 erc4626-tests/=lib/openzeppelin-contracts/lib/erc4626-tests/
