@@ -36,5 +36,7 @@ contract HelperTest is Test {
 		wallet = factory.createWallet(owners, salt);
 		
 		vm.stopPrank();
+
+		vm.label(address(entryPoint), "entry point");
 	}
 }

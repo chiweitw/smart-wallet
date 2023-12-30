@@ -26,7 +26,7 @@ contract Wallet is Proxiable, Slots, WalletStorage {
 	}
 
 	constructor(IEntryPoint anEntryPoint) {
-		 entryPoint = anEntryPoint;
+		_entryPoint = anEntryPoint;
 	}
 
 	function initialize(address[] memory _owners) external {

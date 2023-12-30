@@ -9,10 +9,8 @@ import "../UUPSProxy.sol";
 // contract for creating wallets. 
 contract WalletFactory {
     Wallet public immutable walletImplementation;
-    IEntryPoint public entryPoint;
 
     constructor(IEntryPoint _entryPoint) {
-        entryPoint = _entryPoint;
         walletImplementation = new Wallet(_entryPoint);
     }
 
@@ -27,11 +25,8 @@ contract WalletFactory {
         } 
         // Else deploy the new wallet.
         ret = Wallet(payable(new UUPSProxy{salt : bytes32(salt)}(
-                abi.encodeCall(
-                    Wallet.initialize,
-                    (owners)
-                ),
-                address(walletImplementation)
+                abi.encodeCall(Wallet.initialize,(owners)), //constructData 
+                address(walletImplementation) //contract logic
             )));
     }
 
@@ -43,11 +38,8 @@ contract WalletFactory {
                 abi.encodePacked(
                     type(UUPSProxy).creationCode,
                     abi.encode(
-                        abi.encodeCall(
-                            Wallet.initialize,
-                            (owners)
-                        ),
-                        address(walletImplementation)
+                        abi.encodeCall(Wallet.initialize,(owners)),  //constructData 
+                        address(walletImplementation) //contract logic
                     )
                 )
             )
