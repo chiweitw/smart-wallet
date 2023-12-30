@@ -7,11 +7,10 @@ import { Wallet } from "../src/Wallet/Wallet.sol";
 import { IEntryPoint } from "account-abstraction/interfaces/IEntryPoint.sol";
 import { EntryPoint } from "account-abstraction/core/EntryPoint.sol";
 import { WalletFactory } from "../src/Wallet/WalletFactory.sol";
+import { TestERC20 } from "../src/Test/TestErc20.sol";
 
 contract HelperTest is Test {
 	uint256 constant salt = 1234;
-	uint256 constant initBalance = 1 ether;
-
     address[] public owners;
     IEntryPoint entryPoint;
 	address public admin;
@@ -23,6 +22,10 @@ contract HelperTest is Test {
 	UUPSProxy proxy;
 	WalletFactory factory;
 	Wallet wallet;
+	TestERC20 testErc20;
+
+	uint256 initBalance;
+	uint256 initERC20Balance;
 
 	function setUp() public virtual {
 		// users
@@ -43,12 +46,24 @@ contract HelperTest is Test {
 		factory = new WalletFactory(entryPoint);
 		wallet = factory.createWallet(owners, salt);
 
+		// set ERC20 Token
+		testErc20 = new TestERC20();
+
 		// init balance
+		initBalance = 1 ether;
 		deal(admin, initBalance);
 		deal(alice, initBalance);
 		deal(bob, initBalance);
 		deal(carol, initBalance);
 		deal(address(wallet), initBalance);
+
+		// init ERC20 balance
+		initERC20Balance = 100e18;
+		deal(address(testErc20), admin, initERC20Balance);
+		deal(address(testErc20), alice, initERC20Balance);
+		deal(address(testErc20), bob, initERC20Balance);
+		deal(address(testErc20), carol, initERC20Balance);
+		deal(address(testErc20), address(wallet), initERC20Balance);
 		
 		vm.stopPrank();
 

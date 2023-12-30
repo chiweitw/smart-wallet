@@ -7,10 +7,8 @@ import { HelperTest } from "./Helper.t.sol";
 contract WalletTest is HelperTest {
     function testReceive() public {
         uint amount = 0.01 ether;
-
         vm.prank(alice);
         payable(address(wallet)).transfer(amount);
-
         assertEq(address(wallet).balance, initBalance + amount);
         assertEq(alice.balance, initBalance - amount);
     }
@@ -20,6 +18,15 @@ contract WalletTest is HelperTest {
         wallet.execute(bob, 0.01 ether, "");
         assertEq(bob.balance, initBalance + 0.01 ether);
         assertEq(address(wallet).balance, initBalance - 0.01 ether);
+        vm.stopPrank();
+    }
+
+    function testTransferERC20() public {
+        vm.startPrank(alice);
+        bytes memory data = abi.encodeWithSignature("transfer(address,uint256)", bob, 1e18);
+        wallet.execute(address(testErc20), 0, data);
+        assertEq(testErc20.balanceOf(bob), initERC20Balance + 1e18);
+        assertEq(testErc20.balanceOf(address(wallet)), initERC20Balance - 1e18);
         vm.stopPrank();
     }
 
