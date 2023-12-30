@@ -56,6 +56,26 @@ contract Wallet is Proxiable, Slots, WalletStorage {
 		}
 	}
 
+    // Require the function call went through EntryPoint or owner
+    function _requireFromEntryPointOrOwner() internal view {
+        require(msg.sender == address(_entryPoint) || owners[msg.sender], "account: not Owner or EntryPoint");
+    }
+
+	// execute a transaction (called directly from owner, or by entryPoint)
+    function execute(address dest, uint256 value, bytes calldata func) external {
+        _requireFromEntryPointOrOwner();
+        _call(dest, value, func);
+    }
+
+    function _call(address target, uint256 value, bytes memory data) internal {
+        (bool success, bytes memory result) = target.call{value : value}(data);
+        if (!success) {
+            assembly {
+                revert(add(result, 32), mload(result))
+            }
+        }
+    }
+
 	// Multi-Sig
 	// Submit Transaction
 	function submitTransaction(address _to, uint _value, bytes memory _data) public onlyOwner {

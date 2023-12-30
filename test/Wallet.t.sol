@@ -5,6 +5,24 @@ import { Test, console } from "forge-std/Test.sol";
 import { HelperTest } from "./Helper.t.sol";
 
 contract WalletTest is HelperTest {
+    function testReceive() public {
+        uint amount = 0.01 ether;
+
+        vm.prank(alice);
+        payable(address(wallet)).transfer(amount);
+
+        assertEq(address(wallet).balance, initBalance + amount);
+        assertEq(alice.balance, initBalance - amount);
+    }
+
+    function testTransfer() public {
+        vm.startPrank(alice);
+        wallet.execute(bob, 0.01 ether, "");
+        assertEq(bob.balance, initBalance + 0.01 ether);
+        assertEq(address(wallet).balance, initBalance - 0.01 ether);
+        vm.stopPrank();
+    }
+
     function testSubmitTransaction() public {
         // Todo:
         // Submit transaction

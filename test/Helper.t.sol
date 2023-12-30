@@ -10,13 +10,14 @@ import { WalletFactory } from "../src/Wallet/WalletFactory.sol";
 
 contract HelperTest is Test {
 	uint256 constant salt = 1234;
+	uint256 constant initBalance = 1 ether;
 
     address[] public owners;
     IEntryPoint entryPoint;
-	address public admin = makeAddr("admin");
-	address public alice = makeAddr("alice");
-	address public bob = makeAddr("bob");
-	address public carol = makeAddr("carol");
+	address public admin;
+	address public alice;
+	address public bob;
+	address public carol;
 	address public receiver = makeAddr("receiver");
 
 	UUPSProxy proxy;
@@ -24,6 +25,13 @@ contract HelperTest is Test {
 	Wallet wallet;
 
 	function setUp() public virtual {
+		// users
+		admin = makeAddr("admin");
+		alice = makeAddr("alice");
+		bob = makeAddr("bob");
+		carol = makeAddr("carol");
+		receiver = makeAddr("receiver");
+
 		// set owners
 		owners = [alice, bob, carol];
 
@@ -34,6 +42,13 @@ contract HelperTest is Test {
 		vm.startPrank(admin);
 		factory = new WalletFactory(entryPoint);
 		wallet = factory.createWallet(owners, salt);
+
+		// init balance
+		deal(admin, initBalance);
+		deal(alice, initBalance);
+		deal(bob, initBalance);
+		deal(carol, initBalance);
+		deal(address(wallet), initBalance);
 		
 		vm.stopPrank();
 
