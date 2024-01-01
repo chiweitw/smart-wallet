@@ -52,7 +52,7 @@ contract HelperTest is Test {
 		vm.startPrank(admin);
 		factory = new WalletFactory(entryPoint);
 
-		// pre-determined wallet address
+		// Create Wallet
 		wallet = factory.createWallet(owners, confirmationNum, salt);
 
 		// set ERC20 Token

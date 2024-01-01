@@ -8,6 +8,8 @@ import { UserOperation } from "account-abstraction/interfaces/UserOperation.sol"
 import "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import "openzeppelin-contracts/contracts/utils/cryptography/MessageHashUtils.sol";
 
+import { console } from "forge-std/Test.sol";
+
 contract Wallet is BaseAccount, WalletStorage {
 	using ECDSA for bytes32;
 	using MessageHashUtils for bytes32;
@@ -24,12 +26,12 @@ contract Wallet is BaseAccount, WalletStorage {
 	}
 
 	modifier onlyOwner {
-		require(owners[msg.sender] == true);
+		require(owners[msg.sender] == true, "Only Owner");
 		_;
 	}
 
 	modifier onlyOwnerOrEntryPoint {
-		require(msg.sender == address(_entryPoint) || owners[msg.sender], "Not Owner or EntryPoint");
+		require(msg.sender == address(_entryPoint) || owners[msg.sender], "Only Owner or EntryPoint");
 		_;
 	}
 
@@ -87,13 +89,13 @@ contract Wallet is BaseAccount, WalletStorage {
 
 	// Multi-Sig
 	// Submit Transaction
-	function submitTransaction(address _to, uint _value, bytes memory _data) public onlyOwner returns (uint txId) {
+	function submitTransaction(address _to, uint _value, bytes memory _data) public onlyOwnerOrEntryPoint returns (uint txId) {
 		uint256 currentTxId = txId;
 		transactions[txId] = Transaction({
 			to: _to,
 			value: _value,
 			data: _data,
-			executed: false,
+			status: TransactionStatus.PENDING,
 			confirmationCount: 0
         });
 
@@ -105,7 +107,7 @@ contract Wallet is BaseAccount, WalletStorage {
 	}
 
 	// Confirm Transaction
-	function confirmTransaction(uint txId) external onlyOwner {
+	function confirmTransaction(uint txId) external onlyOwnerOrEntryPoint {
 		Transaction storage transaction = transactions[txId];
 		transaction.confirmationCount++;
 
@@ -119,11 +121,15 @@ contract Wallet is BaseAccount, WalletStorage {
 		(bool success,) = transaction.to.call{value: transaction.value}(transaction.data);
 
 		require(success, "transaction failed");
-		transaction.executed = true;
+		transaction.status = TransactionStatus.EXECUTED;
 		emit ExecuteTransaction(msg.sender, txId);
 	}
 
 	function VERSION() external view virtual returns (string memory) {
 		return "0.0.1";
+	}
+
+	function getTransaction(uint txId) public view virtual returns (Transaction memory) {
+		return transactions[txId];
 	}
 }

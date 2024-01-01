@@ -4,11 +4,17 @@ pragma solidity ^0.8.19;
 import { IEntryPoint } from "account-abstraction/interfaces/IEntryPoint.sol";
 
 contract WalletStorage {
+    enum TransactionStatus {
+        PENDING,
+        CONFIRMED,
+        EXECUTED
+    }
+
     struct Transaction {
        address to;
        uint value;
        bytes data;
-       bool executed;
+       TransactionStatus status;
 	   uint confirmationCount;
 	}
 
