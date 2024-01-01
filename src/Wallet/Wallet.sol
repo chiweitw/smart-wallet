@@ -1,14 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import { console } from "forge-std/Test.sol";
-
+// import { console } from "forge-std/Test.sol";
 import { Proxiable } from "../utils/Proxiable.sol";
 import { Slots } from "../utils/Slots.sol";
 import { WalletStorage } from "./WalletStorage.sol";
 import { IEntryPoint } from "account-abstraction/interfaces/IEntryPoint.sol";
+import { BaseAccount } from "account-abstraction/core/BaseAccount.sol";
+import { UserOperation } from "account-abstraction/interfaces/UserOperation.sol";
+import "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
+import "openzeppelin-contracts/contracts/utils/cryptography/MessageHashUtils.sol";
 
-contract Wallet is Proxiable, Slots, WalletStorage {
+contract Wallet is BaseAccount, Proxiable, Slots, WalletStorage {
+	using ECDSA for bytes32;
+	using MessageHashUtils for bytes32;
+
 	bool public initialized;
 
 	event SubmitTransaction(address indexed owner, uint indexed txId, address indexed to, uint value, bytes data);
@@ -34,16 +40,21 @@ contract Wallet is Proxiable, Slots, WalletStorage {
 		_entryPoint = anEntryPoint;
 	}
 
-	function initialize(address[] memory _owners) external {
+	function entryPoint() public view virtual override returns (IEntryPoint) {
+        return _entryPoint;
+    }
+
+	function initialize(address[] memory _owners, uint256 confirmationNum) external {
 		require(initialized == false, "already initialized");
 		require(_owners.length > 1, "owners required must grater than 1");
-		require(_owners.length >= CONFIRMATION_NUM, "Num of confirmation is not sync with num of owner");
+		require(_owners.length >= confirmationNum, "Num of confirmation is not sync with num of owner");
 		admin = msg.sender;
 		for (uint256 i=0; i < _owners.length; i++) {
 			require(_owners[i]!=address(0), "Invalid Owner");
 			owners[_owners[i]] = true;
 		}
 		initialized = true;
+		_confirmationNum = confirmationNum;
 	}
 
 	function updateCodeAddress(address newImplementation, bytes memory data) external onlyAdmin {
@@ -73,6 +84,23 @@ contract Wallet is Proxiable, Slots, WalletStorage {
                 revert(add(result, 32), mload(result))
             }
         }
+    }
+
+	// ERC4337
+	// check the signature
+	function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
+        internal
+        virtual
+        override
+        returns (uint256 validationData)
+    {
+		require(msg.sender == address(_entryPoint), "Only EntryPoint");
+        bytes32 hash = userOpHash.toEthSignedMessageHash();
+		address signer = ECDSA.recover(hash, userOp.signature);
+        if (!owners[signer]) {
+            return SIG_VALIDATION_FAILED;
+        }
+        return 0;
     }
 
 	// Multi-Sig
@@ -105,7 +133,7 @@ contract Wallet is Proxiable, Slots, WalletStorage {
 	// Execute Transaction
 	function executeTransaction (uint txId) external onlyOwnerOrEntryPoint {
 		Transaction memory transaction = transactions[txId];
-		require(transaction.confirmationCount >= CONFIRMATION_NUM, "Confirmations not enough.");
+		require(transaction.confirmationCount >= _confirmationNum, "Confirmations not enough.");
 		(bool success,) = transaction.to.call{value: transaction.value}(transaction.data);
 
 		require(success, "transaction failed");

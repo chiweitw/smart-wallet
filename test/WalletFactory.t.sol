@@ -8,7 +8,7 @@ import { HelperTest } from "./Helper.t.sol";
 
 contract WalletFactoryTest is HelperTest {
     function testCreateWallet() public {
-        address walletAddress = factory.getAddress(owners, salt);
+        address walletAddress = factory.getAddress(owners, confirmationNum,salt);
 
         assertEq(wallet.initialized(), true);
 

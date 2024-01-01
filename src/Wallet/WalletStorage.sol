@@ -14,11 +14,11 @@ contract WalletStorage {
 
     // constants
     uint256 public constant OWNER_LIMIT = 3;
-    uint256 public constant CONFIRMATION_NUM = 2;
 
     // state variables
     IEntryPoint public immutable _entryPoint;
     address admin;
+    uint256 public _confirmationNum;
     mapping(address => bool) public owners;
     mapping(uint => Transaction) public transactions;
     uint public txId = 0;

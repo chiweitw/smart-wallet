@@ -20,8 +20,15 @@ contract HelperTest is Test {
 	address public someone;
 
 	UUPSProxy proxy;
+
+	// Factory
 	WalletFactory factory;
+
+	// Wallet
 	Wallet wallet;
+	uint256 confirmationNum = 2;
+
+	// Test Token
 	TestERC20 testErc20;
 
 	uint256 initBalance;
@@ -44,7 +51,9 @@ contract HelperTest is Test {
 		// Deploy Factory and Wallet
 		vm.startPrank(admin);
 		factory = new WalletFactory(entryPoint);
-		wallet = factory.createWallet(owners, salt);
+
+		// pre-determined wallet address
+		wallet = factory.createWallet(owners, confirmationNum, salt);
 
 		// set ERC20 Token
 		testErc20 = new TestERC20();

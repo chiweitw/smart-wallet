@@ -15,8 +15,8 @@ contract WalletFactory {
     }
 
     // Create wallet
-    function createWallet(address[] memory owners, uint256 salt) external returns (Wallet ret) {
-        address walletAddress = getAddress(owners, salt);
+    function createWallet(address[] memory owners, uint256 confirmationNum,uint256 salt) external returns (Wallet ret) {
+        address walletAddress = getAddress(owners, confirmationNum, salt);
 
         // If already deployed, return it.
         uint256 codeSize = walletAddress.code.length;
@@ -25,20 +25,20 @@ contract WalletFactory {
         } 
         // Else deploy the new wallet.
         ret = Wallet(payable(new UUPSProxy{salt : bytes32(salt)}(
-                abi.encodeCall(Wallet.initialize,(owners)), //constructData 
+                abi.encodeCall(Wallet.initialize,(owners, confirmationNum)), //constructData 
                 address(walletImplementation) //contract logic
             )));
     }
 
     // Get wallet address
-    function getAddress(address[] memory owners, uint256 salt) public view returns (address) {
+    function getAddress(address[] memory owners, uint256 confirmationNum,uint256 salt) public view returns (address) {
         return Create2.computeAddress(
             bytes32(salt),
             keccak256(
                 abi.encodePacked(
                     type(UUPSProxy).creationCode,
                     abi.encode(
-                        abi.encodeCall(Wallet.initialize,(owners)),  //constructData 
+                        abi.encodeCall(Wallet.initialize,(owners, confirmationNum)),  //constructData 
                         address(walletImplementation) //contract logic
                     )
                 )
