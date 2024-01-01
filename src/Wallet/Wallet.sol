@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-// import { console } from "forge-std/Test.sol";
-import { Proxiable } from "../utils/Proxiable.sol";
-import { Slots } from "../utils/Slots.sol";
 import { WalletStorage } from "./WalletStorage.sol";
 import { IEntryPoint } from "account-abstraction/interfaces/IEntryPoint.sol";
 import { BaseAccount } from "account-abstraction/core/BaseAccount.sol";
@@ -11,7 +8,7 @@ import { UserOperation } from "account-abstraction/interfaces/UserOperation.sol"
 import "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import "openzeppelin-contracts/contracts/utils/cryptography/MessageHashUtils.sol";
 
-contract Wallet is BaseAccount, Proxiable, Slots, WalletStorage {
+contract Wallet is BaseAccount, WalletStorage {
 	using ECDSA for bytes32;
 	using MessageHashUtils for bytes32;
 
@@ -55,21 +52,6 @@ contract Wallet is BaseAccount, Proxiable, Slots, WalletStorage {
 		}
 		initialized = true;
 		_confirmationNum = confirmationNum;
-	}
-
-	function updateCodeAddress(address newImplementation, bytes memory data) external onlyAdmin {
-		// TODO:
-		// 1. check if newimplementation is compatible with proxiable
-		// 2. update the implementation address
-		// 3. initialize proxy, if data exist, then initialize proxy with _data
-		require(Proxiable(newImplementation).proxiableUUID() == proxiableUUID(), "No Proxiable");
-
-		_setSlotToAddress(proxiableUUID(), newImplementation);
-
-		if (data.length > 0) {
-			(bool success,) = newImplementation.delegatecall(data);
-			require(success);
-		}
 	}
 
 	// execute a transaction (called directly from owner, or by entryPoint)
