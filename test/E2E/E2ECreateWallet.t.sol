@@ -85,7 +85,6 @@ contract E2ECreateWalletTest is Test {
 
         // Check if wallet was created
         uint256 codeSize = sender.code.length;
-
         assertGt(codeSize, 0, "Wallet was not created");
         assertEq(Wallet(sender).initialized(), true, "Wallet was not initialized");
         assertEq(address(Wallet(sender).entryPoint()), address(entryPoint));
