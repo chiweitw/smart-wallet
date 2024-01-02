@@ -81,19 +81,7 @@ contract E2ETest is Test {
         );
 
         // create userOperation
-        UserOperation memory userOp = UserOperation({
-            sender: sender,
-            nonce: 0,
-            initCode: initCode,
-            callData: "",
-            callGasLimit: 1_000_000,
-            verificationGasLimit: 1_000_000,
-            preVerificationGas: 1_000_000,
-            maxFeePerGas: 1_000_000,
-            maxPriorityFeePerGas: 1_000_000,
-            paymasterAndData: "",
-            signature: ""
-        });
+        UserOperation memory userOp = createUserOp(initCode, "");
 
         // Sign userOperation and add signature
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
@@ -134,19 +122,7 @@ contract E2ETest is Test {
             ));
 
         // create userOperation
-        UserOperation memory userOp = UserOperation({
-            sender: sender,
-            nonce: 0,
-            initCode: "",
-            callData: callData,
-            callGasLimit: 1_000_000,
-            verificationGasLimit: 1_000_000,
-            preVerificationGas: 1_000_000,
-            maxFeePerGas: 10_000_000_000,
-            maxPriorityFeePerGas: 2_500_000_000,
-            paymasterAndData: "",
-            signature: ""
-        });
+        UserOperation memory userOp = createUserOp("", callData);
         
         // signature
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
@@ -175,6 +151,9 @@ contract E2ETest is Test {
 
     // Todo
     // function testConfirmTransaction() public {
+    //     testSubmitTransaction();
+    //     vm.prank(bob);
+
     // }
 
     // function testExecuteTransaction() public {
@@ -189,5 +168,21 @@ contract E2ETest is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, digest);
         bytes memory signature = bytes.concat(r, s, bytes1(v));
         return signature;
+    }
+
+    function createUserOp(bytes memory initCode, bytes memory callData) public view returns (UserOperation memory) {
+        return UserOperation({
+            sender: sender,
+            nonce: 0,
+            initCode: initCode,
+            callData: callData,
+            callGasLimit: 1_000_000,
+            verificationGasLimit: 1_000_000,
+            preVerificationGas: 1_000_000,
+            maxFeePerGas: 10_000_000_000,
+            maxPriorityFeePerGas: 2_500_000_000,
+            paymasterAndData: "",
+            signature: ""
+        });
     }
 }
