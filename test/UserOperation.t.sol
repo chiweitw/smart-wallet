@@ -12,14 +12,15 @@ import "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import "openzeppelin-contracts/contracts/utils/cryptography/MessageHashUtils.sol";
 import { TestERC20 } from "../src/Test/TestErc20.sol";
 
-contract E2ETest is Test {
+contract UserOperationTest is Test {
     uint256 constant salt = 1234;
     address[] public owners;
     IEntryPoint entryPoint;
     WalletFactory factory;
-    uint256 confirmationNum = 1;
+    uint256 confirmationNum = 2;
     address alice;
     uint256 alicePrivateKey;
+    uint256 bobPrivateKey;
     address bob;
     address carol;
     address sender;
@@ -47,7 +48,7 @@ contract E2ETest is Test {
         // users 
         // alice = makeAddr("alice");
         (alice, alicePrivateKey) = makeAddrAndKey("alice");
-		bob = makeAddr("bob");
+		(bob, bobPrivateKey) = makeAddrAndKey("bob");
 		carol = makeAddr("carol");
         owners = [alice, bob, carol];
 
@@ -64,11 +65,11 @@ contract E2ETest is Test {
 
         // Init Balance
         deal(sender, 1 ether);
+        deal(sender, 1 ether);
 
         // set ERC20 Token
 		testErc20 = new TestERC20();
-
-        deal(address(testErc20), alice, initERC20Balance);
+        deal(address(testErc20), sender, initERC20Balance);
     }
 
     function testE2ECreateWallet() public {
@@ -81,7 +82,7 @@ contract E2ETest is Test {
         );
 
         // create userOperation
-        UserOperation memory userOp = createUserOp(initCode, "");
+        UserOperation memory userOp = createUserOp(0, initCode, "");
 
         // Sign userOperation and add signature
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
@@ -108,9 +109,7 @@ contract E2ETest is Test {
     function testSubmitTransaction() public {
         // Create wallet
         Wallet wallet = factory.createWallet(owners, confirmationNum, salt);
-
         vm.startPrank(alice);
-
         // calldata
         bytes memory data = abi.encodeWithSignature("transfer(address,uint256)", bob, 1e18);
         bytes memory callData = abi.encodeCall(
@@ -120,21 +119,19 @@ contract E2ETest is Test {
                 0, 
                 data
             ));
-
         // create userOperation
-        UserOperation memory userOp = createUserOp("", callData);
-        
+        UserOperation memory userOp = createUserOp(Wallet(sender).getNonce(), "", callData);
         // signature
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
         bytes memory signature = createSignature(userOpHash, alicePrivateKey, vm);
         userOp.signature = signature;
-
         vm.stopPrank();
-
+        vm.startPrank(beneficiary);
         // EntryPoiny handle Operations
         UserOperation[] memory userOps = new UserOperation[](1);
         userOps[0] = userOp;   
         entryPoint.handleOps(userOps, beneficiary);
+        vm.stopPrank();
 
         // Check wallet created
         uint256 codeSize = sender.code.length;
@@ -145,19 +142,66 @@ contract E2ETest is Test {
         assertEq(wallet.getTransaction(0).to, address(testErc20));
         assertEq(wallet.getTransaction(0).value, 0);
         assertEq(wallet.getTransaction(0).data, data);
-        // assertEq(wallet.getTransaction(0).status, WalletStorage.TransactionStatus.PENDING);
         assertEq(wallet.getTransaction(0).confirmationCount, 0);
     }
 
-    // Todo
-    // function testConfirmTransaction() public {
-    //     testSubmitTransaction();
-    //     vm.prank(bob);
+    function testConfirmTransaction() public {
+        testSubmitTransaction();
+        // calldata
+        bytes memory callData = abi.encodeCall(Wallet.confirmTransaction, (0));
+        // create userOperation
+        vm.startPrank(alice);
+        // signature
+        UserOperation memory userOp1 = createUserOp(Wallet(sender).getNonce(), "", callData);
+        bytes32 userOpHash1 = entryPoint.getUserOpHash(userOp1);
+        bytes memory signature1 = createSignature(userOpHash1, alicePrivateKey, vm);
+        userOp1.signature = signature1;
+        vm.stopPrank();
+        // EntryPoiny handle Operations
+        vm.prank(beneficiary);
+        UserOperation[] memory userOps1 = new UserOperation[](1);
+        userOps1[0] = userOp1;  
+        entryPoint.handleOps(userOps1, beneficiary); 
+        vm.startPrank(bob);
+        // signature
+        UserOperation memory userOp2 = createUserOp(Wallet(sender).getNonce(), "", callData);
+        bytes32 userOpHash2 = entryPoint.getUserOpHash(userOp2);
+        bytes memory signature2 = createSignature(userOpHash2, bobPrivateKey, vm);
+        userOp2.signature = signature2;
+        vm.stopPrank();
+        // EntryPoiny handle Operations
+        vm.startPrank(beneficiary);
+        UserOperation[] memory userOps2 = new UserOperation[](1);
+        userOps2[0] = userOp2;  
+        entryPoint.handleOps(userOps2, beneficiary);
+        vm.stopPrank();
 
-    // }
+        assertEq(Wallet(sender).getTransaction(0).confirmationCount, 2);
+    }
 
-    // function testExecuteTransaction() public {
-    // }
+    function testExecuteTransaction() public {
+        testSubmitTransaction();
+        testConfirmTransaction();
+        vm.startPrank(alice);
+        // calldata
+        bytes memory callData = abi.encodeCall(Wallet.executeTransaction, (0));
+        // create userOperation
+        UserOperation memory userOp = createUserOp(Wallet(sender).getNonce(), "", callData);
+        // signature
+        bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
+        bytes memory signature = createSignature(userOpHash, alicePrivateKey, vm);
+        userOp.signature = signature;
+        vm.stopPrank();
+        vm.startPrank(beneficiary);
+        // EntryPoiny handle Operations
+        UserOperation[] memory userOps = new UserOperation[](1);
+        userOps[0] = userOp;   
+        entryPoint.handleOps(userOps, beneficiary);
+        vm.stopPrank();
+
+        assertEq(testErc20.balanceOf(bob), 1e18);
+        assertEq(testErc20.balanceOf(sender), initERC20Balance - 1e18);
+    }
 
     function createSignature(
         bytes32 messageHash,
@@ -170,10 +214,10 @@ contract E2ETest is Test {
         return signature;
     }
 
-    function createUserOp(bytes memory initCode, bytes memory callData) public view returns (UserOperation memory) {
+    function createUserOp(uint256 nonce, bytes memory initCode, bytes memory callData) public view returns (UserOperation memory) {
         return UserOperation({
             sender: sender,
-            nonce: 0,
+            nonce: nonce,
             initCode: initCode,
             callData: callData,
             callGasLimit: 1_000_000,
