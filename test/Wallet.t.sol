@@ -9,7 +9,6 @@ contract WalletTest is HelperTest {
        address to;
        uint value;
        bytes data;
-       bool executed;
 	   uint confirmationCount;
 	}
 
@@ -88,7 +87,7 @@ contract WalletTest is HelperTest {
         wallet.confirmTransaction(txId);
 
         vm.prank(someone);
-        vm.expectRevert("Not Owner or EntryPoint");
+        vm.expectRevert("Only Owner or EntryPoint");
         wallet.executeTransaction(txId);
     }
 

@@ -95,7 +95,6 @@ contract Wallet is BaseAccount, WalletStorage {
 			to: _to,
 			value: _value,
 			data: _data,
-			status: TransactionStatus.PENDING,
 			confirmationCount: 0
         });
 
@@ -121,7 +120,6 @@ contract Wallet is BaseAccount, WalletStorage {
 		(bool success,) = transaction.to.call{value: transaction.value}(transaction.data);
 
 		require(success, "transaction failed");
-		transaction.status = TransactionStatus.EXECUTED;
 		emit ExecuteTransaction(msg.sender, txId);
 	}
 

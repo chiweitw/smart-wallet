@@ -30,20 +30,6 @@ contract UserOperationTest is Test {
 	TestERC20 testErc20;
     uint256 initERC20Balance = 100e18;
 
-    // enum TransactionStatus {
-    //     PENDING,
-    //     CONFIRMED,
-    //     EXECUTED
-    // }
-
-    // struct Transaction {
-    //    address to;
-    //    uint value;
-    //    bytes data;
-    //    TransactionStatus status;
-	//    uint confirmationCount;
-	// }
-
     function setUp() public {
         // users 
         // alice = makeAddr("alice");
