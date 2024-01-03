@@ -11,68 +11,25 @@ import { UserOperation } from "account-abstraction/interfaces/UserOperation.sol"
 import "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import "openzeppelin-contracts/contracts/utils/cryptography/MessageHashUtils.sol";
 import { TestERC20 } from "../src/Test/TestErc20.sol";
+import { HelperTest } from "./Helper.t.sol";
 
-contract UserOperationTest is Test {
-    uint256 constant salt = 1234;
-    address[] public owners;
-    IEntryPoint entryPoint;
-    WalletFactory factory;
-    uint256 confirmationNum = 2;
-    address alice;
-    uint256 alicePrivateKey;
-    uint256 bobPrivateKey;
-    address bob;
-    address carol;
-    address sender;
-    address payable beneficiary;
-
-	// Test Token
-	TestERC20 testErc20;
-    uint256 initERC20Balance = 100e18;
-
-    function setUp() public {
-        // users 
-        // alice = makeAddr("alice");
-        (alice, alicePrivateKey) = makeAddrAndKey("alice");
-		(bob, bobPrivateKey) = makeAddrAndKey("bob");
-		carol = makeAddr("carol");
-        owners = [alice, bob, carol];
-
-        beneficiary = payable(makeAddr("beneficiary"));
-
-        // Deploy EntryPoint
-		entryPoint = new EntryPoint();
-
-        // Deploy Factory
-        factory = new WalletFactory(entryPoint);
-
-        // Pre-compute sender address
-        sender = factory.getAddress(owners, confirmationNum, salt);
-
-        // Init Balance
-        deal(sender, 1 ether);
-        deal(sender, 1 ether);
-
-        // set ERC20 Token
-		testErc20 = new TestERC20();
-        deal(address(testErc20), sender, initERC20Balance);
-    }
-
-    function testE2ECreateWallet() public {
-        vm.startPrank(alice);
-
+contract UserOperationTest is HelperTest {
+    function testCreateWallet() public {
+        vm.startPrank(bob);
+        // Pre-compute address
+        sender = factory.getAddress(owners, confirmationNum, 321);
+        deal(sender, initBalance);
+        
         // initCode to create wallet
         bytes memory initCode = abi.encodePacked(
             abi.encodePacked(address(factory)),
-            abi.encodeWithSelector(WalletFactory.createWallet.selector, owners, confirmationNum, salt)
+            abi.encodeWithSelector(WalletFactory.createWallet.selector, owners, confirmationNum, 321)
         );
-
         // create userOperation
         UserOperation memory userOp = createUserOp(0, initCode, "");
-
         // Sign userOperation and add signature
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
-        bytes memory signature = createSignature(userOpHash, alicePrivateKey, vm);
+        bytes memory signature = createSignature(userOpHash, bobPrivateKey, vm);
         userOp.signature = signature;
 
         vm.stopPrank();
@@ -96,15 +53,15 @@ contract UserOperationTest is Test {
         // Create wallet
         Wallet wallet = factory.createWallet(owners, confirmationNum, salt);
         vm.startPrank(alice);
-        // calldata
-        bytes memory data = abi.encodeWithSignature("transfer(address,uint256)", bob, 1e18);
-        bytes memory callData = abi.encodeCall(
-            Wallet.submitTransaction, 
-            (
-                address(testErc20), 
-                0, 
-                data
-            ));
+        // Calldata
+        WalletStorage.Transaction[] memory txns = new WalletStorage.Transaction[](1);
+        txns[0] = WalletStorage.Transaction({
+            to: address(testErc20),
+            value: 0,
+            data: abi.encodeWithSignature("transfer(address,uint256)", bob, 1e18)
+        });
+
+        bytes memory callData = abi.encodeCall(Wallet.submitTransaction, (txns));
         // create userOperation
         UserOperation memory userOp = createUserOp(Wallet(sender).getNonce(), "", callData);
         // signature
@@ -125,10 +82,10 @@ contract UserOperationTest is Test {
         assertEq(Wallet(sender).initialized(), true, "Wallet was not initialized");
 
         // Check transaction submitted
-        assertEq(wallet.getTransaction(0).to, address(testErc20));
-        assertEq(wallet.getTransaction(0).value, 0);
-        assertEq(wallet.getTransaction(0).data, data);
-        assertEq(wallet.getTransaction(0).confirmationCount, 0);
+        assertEq(wallet.getTransaction(0)[0].to, address(testErc20));
+        assertEq(wallet.getTransaction(0)[0].value, 0);
+        assertEq(wallet.getTransaction(0)[0].data, abi.encodeWithSignature("transfer(address,uint256)", bob, 1e18));
+        assertEq(wallet.getConfirmationCounts(0), 0);
     }
 
     function testConfirmTransaction() public {
@@ -162,7 +119,7 @@ contract UserOperationTest is Test {
         entryPoint.handleOps(userOps2, beneficiary);
         vm.stopPrank();
 
-        assertEq(Wallet(sender).getTransaction(0).confirmationCount, 2);
+        assertEq(wallet.getConfirmationCounts(0), 2);
     }
 
     function testExecuteTransaction() public {
@@ -185,7 +142,7 @@ contract UserOperationTest is Test {
         entryPoint.handleOps(userOps, beneficiary);
         vm.stopPrank();
 
-        assertEq(testErc20.balanceOf(bob), 1e18);
+        assertEq(testErc20.balanceOf(bob), initERC20Balance + 1e18);
         assertEq(testErc20.balanceOf(sender), initERC20Balance - 1e18);
     }
 

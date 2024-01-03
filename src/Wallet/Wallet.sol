@@ -16,9 +16,9 @@ contract Wallet is BaseAccount, WalletStorage {
 
 	bool public initialized;
 
-	event SubmitTransaction(address indexed owner, uint indexed txId, address indexed to, uint value, bytes data);
-	event ConfirmTransaction(address indexed owner, uint indexed txId);
-	event ExecuteTransaction(address indexed owner, uint indexed txId);
+	event SubmitTransaction(address indexed owner, uint indexed nonce);
+	event ConfirmTransaction(address indexed owner, uint indexed nonce);
+	event ExecuteTransaction(address indexed owner, uint indexed nonce);
 
 	modifier onlyAdmin {
 		require(msg.sender == admin, "Only Admin");
@@ -56,20 +56,6 @@ contract Wallet is BaseAccount, WalletStorage {
 		_confirmationNum = confirmationNum;
 	}
 
-	// execute a transaction (called directly from owner, or by entryPoint)
-    function execute(address dest, uint256 value, bytes calldata func) external onlyOwnerOrEntryPoint {
-        _call(dest, value, func);
-    }
-
-    function _call(address target, uint256 value, bytes memory data) internal {
-        (bool success, bytes memory result) = target.call{value : value}(data);
-        if (!success) {
-            assembly {
-                revert(add(result, 32), mload(result))
-            }
-        }
-    }
-
 	// ERC4337
 	// check the signature
 	function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
@@ -87,47 +73,60 @@ contract Wallet is BaseAccount, WalletStorage {
         return 0;
     }
 
-	// Multi-Sig
+	// Multi-Sig and Batch Transaction
 	// Submit Transaction
-	function submitTransaction(address _to, uint _value, bytes memory _data) public onlyOwnerOrEntryPoint returns (uint txId) {
-		uint256 currentTxId = txId;
-		transactions[txId] = Transaction({
-			to: _to,
-			value: _value,
-			data: _data,
-			confirmationCount: 0
-        });
+	function submitTransaction(Transaction[] memory txns) public onlyOwnerOrEntryPoint {
+		uint256 currentNonce = nonce;
+		for (uint256 i=0; i<txns.length; i++) {
+			transactions[currentNonce].push(txns[i]);
+		}
+		nonce++;
 
-		txId++;
-
-		emit SubmitTransaction(msg.sender, txId, _to, _value, _data);
-
-		return currentTxId;
+		emit SubmitTransaction(msg.sender, currentNonce);
 	}
 
 	// Confirm Transaction
-	function confirmTransaction(uint txId) external onlyOwnerOrEntryPoint {
-		Transaction storage transaction = transactions[txId];
-		transaction.confirmationCount++;
+	function confirmTransaction(uint nonce) external onlyOwnerOrEntryPoint {
+		confirmationCounts[nonce] = confirmationCounts[nonce] + 1;
 
-		emit ConfirmTransaction(msg.sender, txId);
+		emit ConfirmTransaction(msg.sender, nonce);
 
 	}
 	// Execute Transaction
-	function executeTransaction (uint txId) external onlyOwnerOrEntryPoint {
-		Transaction memory transaction = transactions[txId];
-		require(transaction.confirmationCount >= _confirmationNum, "Confirmations not enough.");
-		(bool success,) = transaction.to.call{value: transaction.value}(transaction.data);
-
-		require(success, "transaction failed");
-		emit ExecuteTransaction(msg.sender, txId);
+	function executeTransaction (uint nonce) external onlyOwnerOrEntryPoint {
+		require(confirmationCounts[nonce] >= _confirmationNum, "Confirmations not enough.");
+		Transaction[] memory txns = transactions[nonce];
+		executeBatch(txns);
+		emit ExecuteTransaction(msg.sender, nonce);
 	}
+
+	function executeBatch(Transaction[] memory txns) internal {
+		require(txns.length > 0, 'MUST_PASS_TX');
+		uint len = txns.length;
+		for (uint i=0; i<len; i++) {
+			Transaction memory txn = txns[i];
+			_call(txn.to, txn.value, txn.data);
+		}
+	}
+
+    function _call(address target, uint256 value, bytes memory data) internal {
+        (bool success, bytes memory result) = target.call{value : value}(data);
+        if (!success) {
+            assembly {
+                revert(add(result, 32), mload(result))
+            }
+        }
+    }
 
 	function VERSION() external view virtual returns (string memory) {
 		return "0.0.1";
 	}
 
-	function getTransaction(uint txId) public view virtual returns (Transaction memory) {
-		return transactions[txId];
+	function getTransaction(uint256 nonce) public view virtual returns (Transaction[] memory) {
+		return transactions[nonce];
+	}
+	
+	function getConfirmationCounts(uint256 nonce) public view virtual returns (uint256) {
+		return confirmationCounts[nonce];
 	}
 }

@@ -8,7 +8,6 @@ contract WalletStorage {
        address to;
        uint value;
        bytes data;
-	   uint confirmationCount;
 	}
 
     // constants
@@ -19,6 +18,7 @@ contract WalletStorage {
     address admin;
     uint256 public _confirmationNum;
     mapping(address => bool) public owners;
-    mapping(uint => Transaction) public transactions;
-    uint public txId = 0;
+    mapping(uint256 => Transaction[]) public transactions;
+    mapping(uint256 => uint256) public confirmationCounts;
+    uint256 public nonce;
 }
