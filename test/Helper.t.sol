@@ -13,13 +13,13 @@ import { WalletStorage } from "../src/Wallet/WalletStorage.sol";
 contract HelperTest is Test {
 	uint256 constant salt = 1234;
 	// Users
-    address[] owners;
-    IEntryPoint entryPoint;
+	address[] owners;
+	IEntryPoint entryPoint;
 	address admin;
 	address alice;
-    uint256 alicePrivateKey;
+	uint256 alicePrivateKey;
 	address bob;
-    uint256 bobPrivateKey;
+	uint256 bobPrivateKey;
 	address carol;
 	address someone;
 	address payable beneficiary;
