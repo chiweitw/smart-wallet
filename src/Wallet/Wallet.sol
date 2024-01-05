@@ -71,9 +71,9 @@ contract Wallet is BaseAccount, WalletStorage {
     /// @param txns Transactions.
 	/// @param signature Signer's signature.
 	function submitTransaction(Transaction[] memory txns, bytes calldata signature) public onlyOwnerOrEntryPoint {
-		bytes32 messageHash = keccak256(abi.encode(txns));
-		bytes32 signedMessageHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
-		address signer = verifySignature(signedMessageHash, signature);
+		address signer = _getSigner(keccak256(abi.encode(txns)), signature);
+		require(isOwner[signer], "Signer is not an owner");
+
 		uint256 nonce = _addTransaction(txns);
 
 		confirmTransaction(nonce, signature);
@@ -86,9 +86,10 @@ contract Wallet is BaseAccount, WalletStorage {
 	/// @param signature Signer's signature.
 	function confirmTransaction(uint nonce, bytes calldata signature) public onlyOwnerOrEntryPoint {
 		Transaction[] memory txns = getTransaction(nonce);
-		bytes32 messageHash = keccak256(abi.encode(txns));
-		bytes32 signedMessageHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
-		address signer = verifySignature(signedMessageHash, signature);		
+		address signer = _getSigner(keccak256(abi.encode(txns)), signature);	
+
+		// Revert if already confirmed
+		require(!confirmations[nonce][signer], "Already Confirmed");	
 		confirmations[nonce][signer] = true;
 
 		emit ConfirmTransaction(msg.sender, nonce);
@@ -125,7 +126,7 @@ contract Wallet is BaseAccount, WalletStorage {
     /// @dev Returns the confirmation status of a transaction.
     /// @param nonce Transaction Nonce.
     /// @return Confirmation status.
-    function isConfirmed(uint nonce) public returns (bool){
+    function isConfirmed(uint nonce) public view returns (bool){
         uint count = 0;
         for (uint i=0; i<owners.length; i++) {
             if (confirmations[nonce][owners[i]])
@@ -133,6 +134,7 @@ contract Wallet is BaseAccount, WalletStorage {
             if (count == _confirmationNum)
                 return true;
         }
+		return false;
     }
 
 	function VERSION() external view virtual returns (string memory) {
@@ -167,8 +169,13 @@ contract Wallet is BaseAccount, WalletStorage {
 		emit SubmitTransaction(msg.sender, currentNonce);
 	}
 
-	// ERC4337
-	// check the signature
+    /**
+     * validate the signature is valid for this message.
+     * @param userOp validate the userOp.signature field
+     * @param userOpHash convenient field: the hash of the request, to check the signature against
+     *          (also hashes the entrypoint and chain id)
+     * @return validationData signature and time-range of this operation
+     */
 	function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
         internal
         virtual
@@ -184,9 +191,11 @@ contract Wallet is BaseAccount, WalletStorage {
         return 0;
     }
 
-    function verifySignature(bytes32 msgHash, bytes memory signature) public view returns (address signer) {
+
+    function _getSigner(bytes32 hash, bytes memory signature) internal pure returns (address signer) {
+		bytes32 signedHash = MessageHashUtils.toEthSignedMessageHash(hash);
         (uint8 v, bytes32 r, bytes32 s) = _splitSignature(signature);
-		signer = ecrecover(msgHash, v, r, s);
+		signer = ecrecover(signedHash, v, r, s);
     }
 
     function _splitSignature(bytes memory signature) private pure returns (uint8 v, bytes32 r, bytes32 s) {
