@@ -22,14 +22,26 @@ contract WalletTest is HelperTest {
     function testSubmitTransferTransaction() public {
         vm.startPrank(alice);
         // submit Tx and 1st confirmation
+        vm.expectEmit(true, true, true, true);
+        emit SubmitTransaction(alice, 0);
+        vm.expectEmit(true, true, true, true);
+        emit ConfirmTransaction(alice, 0);
         HelperTest.submitTransferTransaction(HelperTest.signedTransferMessage());
+        // epect execution failure when confirmation not enough
         vm.expectEmit(true, true, true, true);
         emit ExecuteTransactionFailure(alice, 0);
         wallet.executeTransaction(0);
+
         vm.stopPrank();
         // 2nd confirmation
-        vm.prank(bob);
+        vm.startPrank(bob);
+        vm.expectEmit(true, true, true, true);
+        emit ConfirmTransaction(bob, 0);
+        vm.expectEmit(true, true, true, true);
+        emit ExecuteTransaction(bob, 0);
         HelperTest.confirmTransferTransaction();
+        vm.stopPrank();
+
         assertEq(bob.balance, initBalance + 0.01 ether);
         assertEq(address(wallet).balance, initBalance - 0.01 ether);
     }
@@ -44,8 +56,13 @@ contract WalletTest is HelperTest {
         wallet.executeTransaction(0);
         vm.stopPrank();
         // 2nd confirmation
-        vm.prank(bob);
+        vm.startPrank(bob);
+        vm.expectEmit(true, true, true, true);
+        emit ConfirmTransaction(bob, 0);
+        vm.expectEmit(true, true, true, true);
+        emit ExecuteTransaction(bob, 0);
         HelperTest.confirmTransferERC20Transaction();
+        vm.stopPrank();
 
         assertEq(testErc20.balanceOf(bob), initERC20Balance + 1e18);
         assertEq(testErc20.balanceOf(address(wallet)), initERC20Balance - 1e18);
