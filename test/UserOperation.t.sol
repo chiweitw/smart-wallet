@@ -29,7 +29,7 @@ contract UserOperationTest is HelperTest {
         UserOperation memory userOp = createUserOp(0, initCode, "");
         // Sign userOperation and add signature
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
-        bytes memory signature = createSignature(userOpHash, bobPrivateKey, vm);
+        bytes memory signature = HelperTest.createSignature(userOpHash, bobPrivateKey, vm);
         userOp.signature = signature;
 
         vm.stopPrank();
@@ -65,12 +65,16 @@ contract UserOperationTest is HelperTest {
             value: 0,
             data: abi.encodeWithSignature("transfer(address,uint256)", bob, 1e18)
         });
-        bytes memory callData = abi.encodeCall(Wallet.submitTransaction, (txns));
+
+        bytes32 messageHash = keccak256(abi.encode(txns));
+        bytes memory sig = HelperTest.createSignature(messageHash, alicePrivateKey, vm);
+
+        bytes memory callData = abi.encodeCall(Wallet.submitTransaction, (txns, sig));
         // create userOperation
         UserOperation memory userOp = createUserOp(Wallet(sender).getNonce(), "", callData);
         // signature
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
-        bytes memory signature = createSignature(userOpHash, alicePrivateKey, vm);
+        bytes memory signature = HelperTest.createSignature(userOpHash, alicePrivateKey, vm);
         userOp.signature = signature;
         vm.stopPrank();
         vm.startPrank(beneficiary);
@@ -93,31 +97,22 @@ contract UserOperationTest is HelperTest {
         assertEq(wallet.getTransaction(0)[1].value, 0);
         assertEq(wallet.getTransaction(0)[1].data, abi.encodeWithSignature("transfer(address,uint256)", bob, 1e18));
         // confitmation counts
-        assertEq(wallet.getConfirmationCounts(0), 0);
+        assertEq(wallet.getConfirmationCount(0), 1);
     }
 
-    function testConfirmTransaction() public {
+    function testConfirmAndExecuteTransaction() public {
         testSubmitTransaction();
+
+        WalletStorage.Transaction[] memory txns = wallet.getTransaction(0);
+        bytes32 messageHash = keccak256(abi.encode(txns));
+        bytes memory sig = HelperTest.createSignature(messageHash, bobPrivateKey, vm);
         // calldata
-        bytes memory callData = abi.encodeCall(Wallet.confirmTransaction, (0));
-        // create userOperation
-        vm.startPrank(alice);
-        // signature
-        UserOperation memory userOp1 = createUserOp(Wallet(sender).getNonce(), "", callData);
-        bytes32 userOpHash1 = entryPoint.getUserOpHash(userOp1);
-        bytes memory signature1 = createSignature(userOpHash1, alicePrivateKey, vm);
-        userOp1.signature = signature1;
-        vm.stopPrank();
-        // EntryPoiny handle Operations
-        vm.prank(beneficiary);
-        UserOperation[] memory userOps1 = new UserOperation[](1);
-        userOps1[0] = userOp1;  
-        entryPoint.handleOps(userOps1, beneficiary); 
+        bytes memory callData = abi.encodeCall(Wallet.confirmTransaction, (0, sig));
         vm.startPrank(bob);
         // signature
         UserOperation memory userOp2 = createUserOp(Wallet(sender).getNonce(), "", callData);
         bytes32 userOpHash2 = entryPoint.getUserOpHash(userOp2);
-        bytes memory signature2 = createSignature(userOpHash2, bobPrivateKey, vm);
+        bytes memory signature2 = HelperTest.createSignature(userOpHash2, bobPrivateKey, vm);
         userOp2.signature = signature2;
         vm.stopPrank();
         // EntryPoiny handle Operations
@@ -127,44 +122,11 @@ contract UserOperationTest is HelperTest {
         entryPoint.handleOps(userOps2, beneficiary);
         vm.stopPrank();
 
-        assertEq(wallet.getConfirmationCounts(0), 2);
-    }
-
-    function testExecuteTransaction() public {
-        testSubmitTransaction();
-        testConfirmTransaction();
-        vm.startPrank(alice);
-        // calldata
-        bytes memory callData = abi.encodeCall(Wallet.executeTransaction, (0));
-        // create userOperation
-        UserOperation memory userOp = createUserOp(Wallet(sender).getNonce(), "", callData);
-        // signature
-        bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
-        bytes memory signature = createSignature(userOpHash, alicePrivateKey, vm);
-        userOp.signature = signature;
-        vm.stopPrank();
-        vm.startPrank(beneficiary);
-        // EntryPoiny handle Operations
-        UserOperation[] memory userOps = new UserOperation[](1);
-        userOps[0] = userOp;   
-        entryPoint.handleOps(userOps, beneficiary);
-        vm.stopPrank();
-
+        assertEq(wallet.getConfirmationCount(0), 2);
         assertEq(testErc20.balanceOf(bob), initERC20Balance + 1e18);
         assertEq(testErc20.balanceOf(sender), initERC20Balance - 1e18);
         assertEq(bob.balance, initBalance + 0.01 ether);
         assertLt(sender.balance, initBalance - 0.01 ether); // sender transfer 0.01 ether + gas fee
-    }
-
-    function createSignature(
-        bytes32 messageHash,
-        uint256 ownerPrivateKey,
-        Vm vm
-    ) public pure returns (bytes memory) {
-        bytes32 digest = MessageHashUtils.toEthSignedMessageHash(messageHash);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPrivateKey, digest);
-        bytes memory signature = bytes.concat(r, s, bytes1(v));
-        return signature;
     }
 
     function createUserOp(uint256 nonce, bytes memory initCode, bytes memory callData) public view returns (UserOperation memory) {

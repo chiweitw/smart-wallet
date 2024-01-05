@@ -6,6 +6,11 @@ import { HelperTest } from "./Helper.t.sol";
 import { WalletStorage } from "../src/Wallet/WalletStorage.sol";
 
 contract WalletTest is HelperTest {
+	event SubmitTransaction(address indexed owner, uint indexed nonce);
+	event ConfirmTransaction(address indexed owner, uint indexed nonce);
+	event ExecuteTransaction(address indexed owner, uint indexed nonce);
+	event ExecuteTransactionFailure(address indexed owner, uint indexed nonce);
+
     function testReceive() public {
         uint amount = 0.01 ether;
         vm.prank(alice);
@@ -18,35 +23,13 @@ contract WalletTest is HelperTest {
         vm.startPrank(alice);
         // submit Tx
         HelperTest._submitTransferTransaction();
-        // 1st confirmation
-        wallet.confirmTransaction(0);
-        vm.expectRevert("Confirmations not enough.");
+        vm.expectEmit(true, true, true, true);
+        emit ExecuteTransactionFailure(alice, 0);
         wallet.executeTransaction(0);
         vm.stopPrank();
-        // 2nd confirmation and execute again
+        // 2nd confirmation
         vm.prank(bob);
-        wallet.confirmTransaction(0);
-        vm.prank(alice);
-        wallet.executeTransaction(0);
-        assertEq(bob.balance, initBalance + 0.01 ether);
-        assertEq(address(wallet).balance, initBalance - 0.01 ether);
-    }
-
-    function testTransferByEntryPoint() public {
-        vm.startPrank(alice);
-        // submit Tx
-        HelperTest._submitTransferTransaction();
-        // 1st confirmation
-        wallet.confirmTransaction(0);
-        vm.expectRevert("Confirmations not enough.");
-        wallet.executeTransaction(0);
-        vm.stopPrank();
-        // 2nd confirmation and execute again
-        vm.prank(bob);
-        wallet.confirmTransaction(0);
-        vm.prank(address(entryPoint));
-        wallet.executeTransaction(0);
-
+        HelperTest._confirmTransferTransaction();
         assertEq(bob.balance, initBalance + 0.01 ether);
         assertEq(address(wallet).balance, initBalance - 0.01 ether);
     }
@@ -55,14 +38,10 @@ contract WalletTest is HelperTest {
         vm.startPrank(alice);
         // submit Tx
         HelperTest._submitTransferTransaction();
-        // 1st confirmation
-        wallet.confirmTransaction(0);
-        vm.expectRevert("Confirmations not enough.");
+        vm.expectEmit(true, true, true, true);
+        emit ExecuteTransactionFailure(alice, 0);
         wallet.executeTransaction(0);
         vm.stopPrank();
-        // 2nd confirmation and execute again
-        vm.prank(bob);
-        wallet.confirmTransaction(0);
         vm.prank(someone);
         vm.expectRevert("Only Owner or EntryPoint");
         wallet.executeTransaction(0);
@@ -73,15 +52,13 @@ contract WalletTest is HelperTest {
         // submit Tx
         HelperTest._submitTransferERC20Transaction();
         // 1st confirmation
-        wallet.confirmTransaction(0);
-        vm.expectRevert("Confirmations not enough.");
+        vm.expectEmit(true, true, true, true);
+        emit ExecuteTransactionFailure(alice, 0);
         wallet.executeTransaction(0);
         vm.stopPrank();
-        // 2nd confirmation and execute again
+        // 2nd confirmation
         vm.prank(bob);
-        wallet.confirmTransaction(0);
-        vm.prank(alice);
-        wallet.executeTransaction(0);
+        HelperTest._confirmTransferERC20Transaction();
 
         assertEq(testErc20.balanceOf(bob), initERC20Balance + 1e18);
         assertEq(testErc20.balanceOf(address(wallet)), initERC20Balance - 1e18);

@@ -17,8 +17,9 @@ contract WalletStorage {
     IEntryPoint public immutable _entryPoint;
     address admin;
     uint256 public _confirmationNum;
-    mapping(address => bool) public owners;
+    address[] public owners;
+    mapping (address => bool) public isOwner;
     mapping(uint256 => Transaction[]) public transactions;
-    mapping(uint256 => uint256) public confirmationCounts;
+    mapping (uint => mapping (address => bool)) public confirmations;
     uint256 public nonce;
 }
