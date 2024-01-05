@@ -54,22 +54,9 @@ contract UserOperationTest is HelperTest {
         Wallet wallet = factory.createWallet(owners, confirmationNum, salt);
         vm.startPrank(alice);
         // Calldata
-        WalletStorage.Transaction[] memory txns = new WalletStorage.Transaction[](2);
-        txns[0] = WalletStorage.Transaction({
-            to: bob,
-            value: 0.01 ether,
-            data: ""
-        });
-        txns[1] = WalletStorage.Transaction({
-            to: address(testErc20),
-            value: 0,
-            data: abi.encodeWithSignature("transfer(address,uint256)", bob, 1e18)
-        });
-
-        bytes32 messageHash = keccak256(abi.encodePacked(Wallet.submitTransaction.selector, abi.encode(txns)));
+        bytes32 messageHash = keccak256(abi.encodePacked(Wallet.submitTransaction.selector, abi.encode(HelperTest.batchTxns())));
         bytes memory sig = HelperTest.createSignature(messageHash, alicePrivateKey, vm);
-
-        bytes memory callData = abi.encodeCall(Wallet.submitTransaction, (txns, sig));
+        bytes memory callData = abi.encodeCall(Wallet.submitTransaction, (HelperTest.batchTxns(), sig));
         // create userOperation
         UserOperation memory userOp = createUserOp(Wallet(sender).getNonce(), "", callData);
         // signature

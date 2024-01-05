@@ -19,14 +19,14 @@ contract WalletTest is HelperTest {
         assertEq(alice.balance, initBalance - amount);
     }
 
-    function testSubmitTransferTransaction() public {
+    function testSubmitTransaction() public {
         vm.startPrank(alice);
         // submit Tx and 1st confirmation
         vm.expectEmit(true, true, true, true);
         emit SubmitTransaction(alice, 0);
         vm.expectEmit(true, true, true, true);
         emit ConfirmTransaction(alice, 0);
-        HelperTest.submitTransferTransaction(HelperTest.signedTransferMessage());
+        HelperTest.submitBatchTransaction(HelperTest.signedBatchMessage());
         // epect execution failure when confirmation not enough
         vm.expectEmit(true, true, true, true);
         emit ExecuteTransactionFailure(alice, 0);
@@ -39,33 +39,11 @@ contract WalletTest is HelperTest {
         emit ConfirmTransaction(bob, 0);
         vm.expectEmit(true, true, true, true);
         emit ExecuteTransaction(bob, 0);
-        HelperTest.confirmTransferTransaction();
+        HelperTest.confirmBatchTransaction();
         vm.stopPrank();
 
         assertEq(bob.balance, initBalance + 0.01 ether);
         assertEq(address(wallet).balance, initBalance - 0.01 ether);
-    }
-
-    function testSubmitTransferERC20Transaction() public {
-        vm.startPrank(alice);
-        // submit Tx
-        HelperTest.submitTransferERC20Transaction();
-        // 1st confirmation
-        vm.expectEmit(true, true, true, true);
-        emit ExecuteTransactionFailure(alice, 0);
-        wallet.executeTransaction(0);
-        vm.stopPrank();
-        // 2nd confirmation
-        vm.startPrank(bob);
-        vm.expectEmit(true, true, true, true);
-        emit ConfirmTransaction(bob, 0);
-        vm.expectEmit(true, true, true, true);
-        emit ExecuteTransaction(bob, 0);
-        HelperTest.confirmTransferERC20Transaction();
-        vm.stopPrank();
-
-        assertEq(testErc20.balanceOf(bob), initERC20Balance + 1e18);
-        assertEq(testErc20.balanceOf(address(wallet)), initERC20Balance - 1e18);
     }
 
     function testSubmitTransactionByNotOwnerOrEntryPoint() public {
@@ -79,7 +57,6 @@ contract WalletTest is HelperTest {
         vm.startPrank(alice);
         // submit Tx and 1st confirmation
         vm.expectRevert("Invalid signature");
-        HelperTest.submitTransferTransaction(HelperTest.invalidMessage());
-
+        HelperTest.submitBatchTransaction(HelperTest.invalidMessage());
     }
 }

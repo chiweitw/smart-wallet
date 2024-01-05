@@ -77,56 +77,61 @@ contract HelperTest is Test {
 		return keccak256(abi.encode(""));
 	}
 
-	function signedTransferMessage() internal view returns (bytes32 signedMessage) {
-		WalletStorage.Transaction[] memory txns = transferTxns();
+	function signedBatchMessage() internal view returns (bytes32 signedMessage) {
+		WalletStorage.Transaction[] memory txns = batchTxns();
 		signedMessage = keccak256(abi.encodePacked(Wallet.submitTransaction.selector, abi.encode(txns)));
 	}
 
-	function transferTxns() internal view returns (WalletStorage.Transaction[] memory txns) {
-        txns = new WalletStorage.Transaction[](1);
+	function batchTxns() internal view returns (WalletStorage.Transaction[] memory txns) {
+        txns = new WalletStorage.Transaction[](2);
         txns[0] = WalletStorage.Transaction({
             to: bob,
             value: 0.01 ether,
             data: ""
         });
-	}
-
-    function submitTransferTransaction(bytes32 messageHash) internal {
-        bytes memory sig = createSignature(messageHash, alicePrivateKey, vm);
-        wallet.submitTransaction(transferTxns(), sig);
-    }
-
-    function confirmTransferTransaction() internal {
-		bytes32 messageHash = signedTransferMessage();
-        bytes memory sig = createSignature(messageHash, bobPrivateKey, vm);
-        wallet.confirmTransaction(0, sig);
-    }
-
-	function signedTransferERC20Message() internal view returns (bytes32 signedMessage) {
-		WalletStorage.Transaction[] memory txns = transferERC20Txns();
-		signedMessage = keccak256(abi.encodePacked(Wallet.submitTransaction.selector, abi.encode(txns)));
-	}
-
-	function transferERC20Txns() internal view returns (WalletStorage.Transaction[] memory txns) {
-        txns = new WalletStorage.Transaction[](1);
-        txns[0] = WalletStorage.Transaction({
+        txns[1] = WalletStorage.Transaction({
             to: address(testErc20),
             value: 0,
             data: abi.encodeWithSignature("transfer(address,uint256)", bob, 1e18)
         });
 	}
 
-    function submitTransferERC20Transaction() internal {
-		bytes32 messageHash = signedTransferERC20Message();
+    function submitBatchTransaction(bytes32 messageHash) internal {
         bytes memory sig = createSignature(messageHash, alicePrivateKey, vm);
-        wallet.submitTransaction(transferERC20Txns(), sig);
+        wallet.submitTransaction(batchTxns(), sig);
     }
 
-    function confirmTransferERC20Transaction() internal {
-		bytes32 messageHash = signedTransferERC20Message();
+    function confirmBatchTransaction() internal {
+		bytes32 messageHash = signedBatchMessage();
         bytes memory sig = createSignature(messageHash, bobPrivateKey, vm);
         wallet.confirmTransaction(0, sig);
     }
+
+	// function signedTransferERC20Message() internal view returns (bytes32 signedMessage) {
+	// 	WalletStorage.Transaction[] memory txns = transferERC20Txns();
+	// 	signedMessage = keccak256(abi.encodePacked(Wallet.submitTransaction.selector, abi.encode(txns)));
+	// }
+
+	// function transferERC20Txns() internal view returns (WalletStorage.Transaction[] memory txns) {
+    //     txns = new WalletStorage.Transaction[](1);
+    //     txns[0] = WalletStorage.Transaction({
+    //         to: address(testErc20),
+    //         value: 0,
+    //         data: abi.encodeWithSignature("transfer(address,uint256)", bob, 1e18)
+    //     });
+	// }
+
+    // function submitTransferERC20Transaction() internal {
+	// 	bytes32 messageHash = signedTransferERC20Message();
+    //     bytes memory sig = createSignature(messageHash, alicePrivateKey, vm);
+    //     wallet.submitTransaction(transferERC20Txns(), sig);
+    // }
+
+    // function confirmTransferERC20Transaction() internal {
+	// 	bytes32 messageHash = signedTransferERC20Message();
+    //     bytes memory sig = createSignature(messageHash, bobPrivateKey, vm);
+    //     wallet.confirmTransaction(0, sig);
+    // }
 
     function createSignature(
         bytes32 messageHash,
