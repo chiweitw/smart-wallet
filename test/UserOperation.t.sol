@@ -54,13 +54,17 @@ contract UserOperationTest is HelperTest {
         Wallet wallet = factory.createWallet(owners, confirmationNum, salt);
         vm.startPrank(alice);
         // Calldata
-        WalletStorage.Transaction[] memory txns = new WalletStorage.Transaction[](1);
+        WalletStorage.Transaction[] memory txns = new WalletStorage.Transaction[](2);
         txns[0] = WalletStorage.Transaction({
+            to: bob,
+            value: 0.01 ether,
+            data: ""
+        });
+        txns[1] = WalletStorage.Transaction({
             to: address(testErc20),
             value: 0,
             data: abi.encodeWithSignature("transfer(address,uint256)", bob, 1e18)
         });
-
         bytes memory callData = abi.encodeCall(Wallet.submitTransaction, (txns));
         // create userOperation
         UserOperation memory userOp = createUserOp(Wallet(sender).getNonce(), "", callData);
@@ -75,16 +79,20 @@ contract UserOperationTest is HelperTest {
         userOps[0] = userOp;   
         entryPoint.handleOps(userOps, beneficiary);
         vm.stopPrank();
-
         // Check wallet created
         uint256 codeSize = sender.code.length;
         assertGt(codeSize, 0, "Wallet was not created");
         assertEq(Wallet(sender).initialized(), true, "Wallet was not initialized");
-
         // Check transaction submitted
-        assertEq(wallet.getTransaction(0)[0].to, address(testErc20));
-        assertEq(wallet.getTransaction(0)[0].value, 0);
-        assertEq(wallet.getTransaction(0)[0].data, abi.encodeWithSignature("transfer(address,uint256)", bob, 1e18));
+        // transfer ETH
+        assertEq(wallet.getTransaction(0)[0].to, bob);
+        assertEq(wallet.getTransaction(0)[0].value, 0.01 ether);
+        assertEq(wallet.getTransaction(0)[0].data, "");
+        // transfer ERC20
+        assertEq(wallet.getTransaction(0)[1].to, address(testErc20));
+        assertEq(wallet.getTransaction(0)[1].value, 0);
+        assertEq(wallet.getTransaction(0)[1].data, abi.encodeWithSignature("transfer(address,uint256)", bob, 1e18));
+        // confitmation counts
         assertEq(wallet.getConfirmationCounts(0), 0);
     }
 
@@ -144,6 +152,8 @@ contract UserOperationTest is HelperTest {
 
         assertEq(testErc20.balanceOf(bob), initERC20Balance + 1e18);
         assertEq(testErc20.balanceOf(sender), initERC20Balance - 1e18);
+        assertEq(bob.balance, initBalance + 0.01 ether);
+        assertLt(sender.balance, initBalance - 0.01 ether); // sender transfer 0.01 ether + gas fee
     }
 
     function createSignature(
