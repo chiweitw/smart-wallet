@@ -4,22 +4,30 @@ pragma solidity ^0.8.19;
 import { IEntryPoint } from "account-abstraction/interfaces/IEntryPoint.sol";
 
 contract WalletStorage {
+    /*
+     *  Structs
+     */
     struct Transaction {
        address to;
        uint value;
        bytes data;
 	}
 
-    // constants
+    /*
+     *  Constants
+     */
     uint256 public constant OWNER_LIMIT = 3;
 
-    // state variables
+    /*
+     *  Storage
+     */
     IEntryPoint public immutable _entryPoint;
-    address admin;
+    uint256 public nonce;
     uint256 public _confirmationNum;
     address[] public owners;
+    address admin;
     mapping (address => bool) public isOwner;
-    mapping(uint256 => Transaction[]) public transactions;
-    mapping (uint => mapping (address => bool)) public confirmations;
-    uint256 public nonce;
+    mapping (uint256 => Transaction[]) public transactions;
+    mapping (uint256 => mapping (address => bool)) public confirmations;
+    mapping (uint256 => bool) public isExecuted;
 }

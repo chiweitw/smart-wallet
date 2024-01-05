@@ -14,11 +14,17 @@ contract Wallet is BaseAccount, WalletStorage {
 
 	bool public initialized;
 
+    /*
+     *  Events
+     */
 	event SubmitTransaction(address indexed owner, uint indexed nonce);
 	event ConfirmTransaction(address indexed owner, uint indexed nonce);
 	event ExecuteTransaction(address indexed owner, uint indexed nonce);
 	event ExecuteTransactionFailure(address indexed owner, uint indexed nonce);
 
+    /*
+     *  Modifiers
+     */
 	modifier onlyAdmin {
 		require(msg.sender == admin, "Only Admin");
 		_; 
@@ -33,6 +39,11 @@ contract Wallet is BaseAccount, WalletStorage {
 		require(msg.sender == address(_entryPoint) || isOwner[msg.sender], "Only Owner or EntryPoint");
 		_;
 	}
+
+	modifier notExecuted(uint256 nonce) {
+        require(!isExecuted[nonce], "Already Executed");
+        _;
+    }
 
 	constructor(IEntryPoint anEntryPoint) {
 		_entryPoint = anEntryPoint;
@@ -86,7 +97,7 @@ contract Wallet is BaseAccount, WalletStorage {
 
     /// @dev Allows an owner or entry point to execute a confirmed transaction.
     /// @param nonce Transaction Nonce.
-	function executeTransaction (uint nonce) public onlyOwnerOrEntryPoint {
+	function executeTransaction (uint nonce) public onlyOwnerOrEntryPoint notExecuted(nonce) {
 		if (isConfirmed(nonce)){
 			Transaction[] memory txns = transactions[nonce];
 			_executeBatch(txns);
