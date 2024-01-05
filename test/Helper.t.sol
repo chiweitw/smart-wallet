@@ -73,7 +73,7 @@ contract HelperTest is Test {
 		vm.stopPrank();
 	}
 
-	function _transferTxns() internal returns (WalletStorage.Transaction[] memory txns) {
+	function _transferTxns() internal view returns (WalletStorage.Transaction[] memory txns) {
         txns = new WalletStorage.Transaction[](1);
         txns[0] = WalletStorage.Transaction({
             to: bob,
@@ -96,7 +96,7 @@ contract HelperTest is Test {
         wallet.confirmTransaction(0, sig);
     }
 
-	function _transferERC20Txns() internal returns (WalletStorage.Transaction[] memory txns) {
+	function _transferERC20Txns() internal view returns (WalletStorage.Transaction[] memory txns) {
         txns = new WalletStorage.Transaction[](1);
         txns[0] = WalletStorage.Transaction({
             to: address(testErc20),

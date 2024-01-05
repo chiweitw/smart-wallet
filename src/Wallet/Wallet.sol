@@ -45,6 +45,9 @@ contract Wallet is BaseAccount, WalletStorage {
         _;
     }
 
+    /*
+     *  Constructor
+     */
 	constructor(IEntryPoint anEntryPoint) {
 		_entryPoint = anEntryPoint;
 	}
@@ -71,7 +74,7 @@ contract Wallet is BaseAccount, WalletStorage {
     /// @param txns Transactions.
 	/// @param signature Signer's signature.
 	function submitTransaction(Transaction[] memory txns, bytes calldata signature) public onlyOwnerOrEntryPoint {
-		isValidSignature(keccak256(abi.encode(txns)), signature);
+		_isValidSignature(keccak256(abi.encode(txns)), signature);
 		uint256 nonce = _addTransaction(txns);
 		confirmTransaction(nonce, signature);
 
@@ -81,7 +84,7 @@ contract Wallet is BaseAccount, WalletStorage {
     /// @dev Allows an owner or entry point to confirm a transaction.
     /// @param nonce Transaction Nonce.
 	/// @param signature Signer's signature.
-	function confirmTransaction(uint nonce, bytes calldata signature) public onlyOwnerOrEntryPoint {
+	function confirmTransaction(uint256 nonce, bytes calldata signature) public onlyOwnerOrEntryPoint {
 		Transaction[] memory txns = getTransaction(nonce);
 		address signer = _getSigner(keccak256(abi.encode(txns)), signature);	
 
@@ -95,7 +98,7 @@ contract Wallet is BaseAccount, WalletStorage {
 
     /// @dev Allows an owner or entry point to execute a confirmed transaction.
     /// @param nonce Transaction Nonce.
-	function executeTransaction (uint nonce) public onlyOwnerOrEntryPoint notExecuted(nonce) {
+	function executeTransaction (uint256 nonce) public onlyOwnerOrEntryPoint notExecuted(nonce) {
 		if (isConfirmed(nonce)){
 			Transaction[] memory txns = transactions[nonce];
 			_executeBatch(txns);
@@ -149,6 +152,9 @@ contract Wallet is BaseAccount, WalletStorage {
         }
     }
 
+
+	/// @dev execute a sequence of transactions.
+	/// @param txns Transactions.
 	function _executeBatch(Transaction[] memory txns) internal {
 		require(txns.length > 0, 'MUST_PASS_TX');
 		uint len = txns.length;
@@ -157,6 +163,10 @@ contract Wallet is BaseAccount, WalletStorage {
 			_call(txn.to, txn.value, txn.data);
 		}
 	}
+
+	/// @dev Add Transaction to the list.
+	/// @param txns Transactions.
+	/// @return currentNonce Current nonce.
 	function _addTransaction(Transaction[] memory txns) internal returns (uint256 currentNonce) {
 		currentNonce = nonce;
 		for (uint256 i=0; i<txns.length; i++) {
@@ -166,13 +176,12 @@ contract Wallet is BaseAccount, WalletStorage {
 		emit SubmitTransaction(msg.sender, currentNonce);
 	}
 
-    /**
-     * validate the signature is valid for this message.
-     * @param userOp validate the userOp.signature field
-     * @param userOpHash convenient field: the hash of the request, to check the signature against
-     *          (also hashes the entrypoint and chain id)
-     * @return validationData signature and time-range of this operation
-     */
+	/// For supporting ERC-4337
+    /// @dev validate the signature is valid for this message.
+    /// @param userOp validate the userOp.signature field
+    /// @param userOpHash convenient field: the hash of the request, to check the signature against
+    ///                   (also hashes the entrypoint and chain id)
+    /// @return validationData signature and time-range of this operation
 	function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
         internal
         virtual
@@ -188,13 +197,17 @@ contract Wallet is BaseAccount, WalletStorage {
         return 0;
     }
 
-
+	/// @dev Get Signer address from message hash and signature
+	/// @param hash message hash
+	/// @param signature Signer's signature.
     function _getSigner(bytes32 hash, bytes memory signature) internal pure returns (address signer) {
 		bytes32 signedHash = MessageHashUtils.toEthSignedMessageHash(hash);
         (uint8 v, bytes32 r, bytes32 s) = _splitSignature(signature);
 		signer = ecrecover(signedHash, v, r, s);
     }
 
+	/// @dev Split signature into v, r, s
+	/// @param signature Signer's signature.
     function _splitSignature(bytes memory signature) private pure returns (uint8 v, bytes32 r, bytes32 s) {
         require(signature.length == 65, "Invalid signature length");
 
@@ -205,7 +218,10 @@ contract Wallet is BaseAccount, WalletStorage {
         }
     }
 
-	function isValidSignature(bytes32 hash, bytes memory signature) public view returns (bool) {
+	/// @dev Validate signer is one of the owner
+	/// @param hash message hash
+	/// @param signature Signer's signature.
+	function _isValidSignature(bytes32 hash, bytes memory signature) internal view {
 		require(isOwner[_getSigner(hash, signature)], "Invalid signature");
     }
 }
