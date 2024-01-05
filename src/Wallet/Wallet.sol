@@ -86,11 +86,11 @@ contract Wallet is BaseAccount, WalletStorage {
 	/// @param signature Signer's signature.
 	function confirmTransaction(uint256 nonce, bytes calldata signature) public onlyOwnerOrEntryPoint {
 		Transaction[] memory txns = getTransaction(nonce);
-		address signer = _getSigner(keccak256(abi.encodePacked(this.submitTransaction.selector, abi.encode(txns))), signature);	
+		address submitTransactionSigner = _getSigner(keccak256(abi.encodePacked(this.submitTransaction.selector, abi.encode(txns))), signature);	
 
 		// Revert if already confirmed
-		require(!confirmations[nonce][signer], "Already Confirmed");	
-		confirmations[nonce][signer] = true;
+		require(!confirmations[nonce][submitTransactionSigner], "Already Confirmed");	
+		confirmations[nonce][submitTransactionSigner] = true;
 
 		emit ConfirmTransaction(msg.sender, nonce);
 		executeTransaction(nonce);

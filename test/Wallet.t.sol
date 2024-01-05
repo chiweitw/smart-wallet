@@ -19,38 +19,25 @@ contract WalletTest is HelperTest {
         assertEq(alice.balance, initBalance - amount);
     }
 
-    function testTransfer() public {
+    function testSubmitTransferTransaction() public {
         vm.startPrank(alice);
-        // submit Tx
-        HelperTest._submitTransferTransaction();
+        // submit Tx and 1st confirmation
+        HelperTest.submitTransferTransaction(HelperTest.signedTransferMessage());
         vm.expectEmit(true, true, true, true);
         emit ExecuteTransactionFailure(alice, 0);
         wallet.executeTransaction(0);
         vm.stopPrank();
         // 2nd confirmation
         vm.prank(bob);
-        HelperTest._confirmTransferTransaction();
+        HelperTest.confirmTransferTransaction();
         assertEq(bob.balance, initBalance + 0.01 ether);
         assertEq(address(wallet).balance, initBalance - 0.01 ether);
     }
 
-    function testTransferByNotOwnerOrEntryPoint() public {
+    function testSubmitTransferERC20Transaction() public {
         vm.startPrank(alice);
         // submit Tx
-        HelperTest._submitTransferTransaction();
-        vm.expectEmit(true, true, true, true);
-        emit ExecuteTransactionFailure(alice, 0);
-        wallet.executeTransaction(0);
-        vm.stopPrank();
-        vm.prank(someone);
-        vm.expectRevert("Only Owner or EntryPoint");
-        wallet.executeTransaction(0);
-    }
-
-    function testTransferERC20() public {
-        vm.startPrank(alice);
-        // submit Tx
-        HelperTest._submitTransferERC20Transaction();
+        HelperTest.submitTransferERC20Transaction();
         // 1st confirmation
         vm.expectEmit(true, true, true, true);
         emit ExecuteTransactionFailure(alice, 0);
@@ -58,9 +45,24 @@ contract WalletTest is HelperTest {
         vm.stopPrank();
         // 2nd confirmation
         vm.prank(bob);
-        HelperTest._confirmTransferERC20Transaction();
+        HelperTest.confirmTransferERC20Transaction();
 
         assertEq(testErc20.balanceOf(bob), initERC20Balance + 1e18);
         assertEq(testErc20.balanceOf(address(wallet)), initERC20Balance - 1e18);
+    }
+
+    function testSubmitTransactionByNotOwnerOrEntryPoint() public {
+        vm.startPrank(someone);
+        vm.expectRevert("Only Owner or EntryPoint");
+        wallet.executeTransaction(0);
+        vm.stopPrank();
+    }
+
+    function testSubmitTransactionWithInvalidSignature() public {
+        vm.startPrank(alice);
+        // submit Tx and 1st confirmation
+        vm.expectRevert("Invalid signature");
+        HelperTest.submitTransferTransaction(HelperTest.invalidMessage());
+
     }
 }
