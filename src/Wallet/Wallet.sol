@@ -72,9 +72,7 @@ contract Wallet is BaseAccount, WalletStorage {
 	/// @param signature Signer's signature.
 	function submitTransaction(Transaction[] memory txns, bytes calldata signature) public onlyOwnerOrEntryPoint {
 		isValidSignature(keccak256(abi.encode(txns)), signature);
-
 		uint256 nonce = _addTransaction(txns);
-
 		confirmTransaction(nonce, signature);
 
 		emit SubmitTransaction(msg.sender, nonce);

@@ -29,7 +29,7 @@ contract UserOperationTest is HelperTest {
         UserOperation memory userOp = createUserOp(0, initCode, "");
         // Sign userOperation and add signature
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
-        bytes memory signature = HelperTest.createSignature(userOpHash, bobPrivateKey, vm);
+        bytes memory signature = HelperTest._createSignature(userOpHash, bobPrivateKey, vm);
         userOp.signature = signature;
 
         vm.stopPrank();
@@ -67,14 +67,14 @@ contract UserOperationTest is HelperTest {
         });
 
         bytes32 messageHash = keccak256(abi.encode(txns));
-        bytes memory sig = HelperTest.createSignature(messageHash, alicePrivateKey, vm);
+        bytes memory sig = HelperTest._createSignature(messageHash, alicePrivateKey, vm);
 
         bytes memory callData = abi.encodeCall(Wallet.submitTransaction, (txns, sig));
         // create userOperation
         UserOperation memory userOp = createUserOp(Wallet(sender).getNonce(), "", callData);
         // signature
         bytes32 userOpHash = entryPoint.getUserOpHash(userOp);
-        bytes memory signature = HelperTest.createSignature(userOpHash, alicePrivateKey, vm);
+        bytes memory signature = HelperTest._createSignature(userOpHash, alicePrivateKey, vm);
         userOp.signature = signature;
         vm.stopPrank();
         vm.startPrank(beneficiary);
@@ -105,14 +105,14 @@ contract UserOperationTest is HelperTest {
 
         WalletStorage.Transaction[] memory txns = wallet.getTransaction(0);
         bytes32 messageHash = keccak256(abi.encode(txns));
-        bytes memory sig = HelperTest.createSignature(messageHash, bobPrivateKey, vm);
+        bytes memory sig = HelperTest._createSignature(messageHash, bobPrivateKey, vm);
         // calldata
         bytes memory callData = abi.encodeCall(Wallet.confirmTransaction, (0, sig));
         vm.startPrank(bob);
         // signature
         UserOperation memory userOp2 = createUserOp(Wallet(sender).getNonce(), "", callData);
         bytes32 userOpHash2 = entryPoint.getUserOpHash(userOp2);
-        bytes memory signature2 = HelperTest.createSignature(userOpHash2, bobPrivateKey, vm);
+        bytes memory signature2 = HelperTest._createSignature(userOpHash2, bobPrivateKey, vm);
         userOp2.signature = signature2;
         vm.stopPrank();
         // EntryPoiny handle Operations
