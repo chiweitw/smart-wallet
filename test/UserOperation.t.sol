@@ -66,7 +66,7 @@ contract UserOperationTest is HelperTest {
             data: abi.encodeWithSignature("transfer(address,uint256)", bob, 1e18)
         });
 
-        bytes32 messageHash = keccak256(abi.encode(txns));
+        bytes32 messageHash = keccak256(abi.encodePacked(Wallet.submitTransaction.selector, abi.encode(txns)));
         bytes memory sig = HelperTest._createSignature(messageHash, alicePrivateKey, vm);
 
         bytes memory callData = abi.encodeCall(Wallet.submitTransaction, (txns, sig));
@@ -104,7 +104,7 @@ contract UserOperationTest is HelperTest {
         testSubmitTransaction();
 
         WalletStorage.Transaction[] memory txns = wallet.getTransaction(0);
-        bytes32 messageHash = keccak256(abi.encode(txns));
+        bytes32 messageHash = keccak256(abi.encodePacked(Wallet.submitTransaction.selector, abi.encode(txns)));
         bytes memory sig = HelperTest._createSignature(messageHash, bobPrivateKey, vm);
         // calldata
         bytes memory callData = abi.encodeCall(Wallet.confirmTransaction, (0, sig));

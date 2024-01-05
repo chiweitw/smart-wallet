@@ -74,7 +74,7 @@ contract Wallet is BaseAccount, WalletStorage {
     /// @param txns Transactions.
 	/// @param signature Signer's signature.
 	function submitTransaction(Transaction[] memory txns, bytes calldata signature) public onlyOwnerOrEntryPoint {
-		_isValidSignature(keccak256(abi.encode(txns)), signature);
+		_isValidSignature(keccak256(abi.encodePacked(this.submitTransaction.selector, abi.encode(txns))), signature);
 		uint256 nonce = _addTransaction(txns);
 		confirmTransaction(nonce, signature);
 
@@ -86,7 +86,7 @@ contract Wallet is BaseAccount, WalletStorage {
 	/// @param signature Signer's signature.
 	function confirmTransaction(uint256 nonce, bytes calldata signature) public onlyOwnerOrEntryPoint {
 		Transaction[] memory txns = getTransaction(nonce);
-		address signer = _getSigner(keccak256(abi.encode(txns)), signature);	
+		address signer = _getSigner(keccak256(abi.encodePacked(this.submitTransaction.selector, abi.encode(txns))), signature);	
 
 		// Revert if already confirmed
 		require(!confirmations[nonce][signer], "Already Confirmed");	
@@ -137,6 +137,9 @@ contract Wallet is BaseAccount, WalletStorage {
 		return false;
     }
 
+	/*
+     * Version
+     */
 	function VERSION() external view virtual returns (string memory) {
 		return "0.0.1";
 	}
