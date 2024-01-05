@@ -71,8 +71,7 @@ contract Wallet is BaseAccount, WalletStorage {
     /// @param txns Transactions.
 	/// @param signature Signer's signature.
 	function submitTransaction(Transaction[] memory txns, bytes calldata signature) public onlyOwnerOrEntryPoint {
-		address signer = _getSigner(keccak256(abi.encode(txns)), signature);
-		require(isOwner[signer], "Signer is not an owner");
+		isValidSignature(keccak256(abi.encode(txns)), signature);
 
 		uint256 nonce = _addTransaction(txns);
 
@@ -199,12 +198,16 @@ contract Wallet is BaseAccount, WalletStorage {
     }
 
     function _splitSignature(bytes memory signature) private pure returns (uint8 v, bytes32 r, bytes32 s) {
-        require(signature.length == 65, "SimpleAccount: Invalid signature length");
+        require(signature.length == 65, "Invalid signature length");
 
         assembly {
             r := mload(add(signature, 32))
             s := mload(add(signature, 64))
             v := byte(0, mload(add(signature, 96)))
         }
+    }
+
+	function isValidSignature(bytes32 hash, bytes memory signature) public view returns (bool) {
+		require(isOwner[_getSigner(hash, signature)], "Invalid signature");
     }
 }
