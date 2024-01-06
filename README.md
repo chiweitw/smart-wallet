@@ -10,16 +10,15 @@ A smart crypto wallet built on smart contract technology enables powerful featur
     - You can obtain the address either before or after the account is created, which means you can start receiving ETH or tokens before ever sending a transaction by yourself.
     - UUPS Proxy upgradable.
 - Multi-Signature
-    - Transactions can be executed only when confirmed by a predefined number of owners.
-    - Inspired by [gnosis](https://github.com/gnosis/MultiSigWallet/tree/master?tab=readme-ov-file).
+    - Transactions can be executed only when confirmed by a predefined `confirmationNum`.
+    - Owner can revoke confirmation.
 - ERC-4337 & Account Abstraction
     - Allows users to enjoy a singular account with smart contract and EOA functionality.
     - Users can send out the intent in the form of user operations and let the bundler validate and execute the operations through the entry point.
-    - Based on the [Eth-Infinitism repo](https://github.com/eth-infinitism/account-abstraction)
+    - Based on the [Eth-Infinitism repo](https://github.com/eth-infinitism/account-abstraction).
 - Batch Transaction
     - Perform multiple transaction in one single batch, improve convenience and reduce gas cost.
-- Multi-Swap and Multi-Transfer
-    - Multiple and sequential transactions can be composed into one signed message and then submitted for confirmation. See the demo in the Foundry test code.
+    - eg. Multi-Swap and Multi-Transfer. See demo in foundry test code.
 
 ## Use Cases
 

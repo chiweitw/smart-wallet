@@ -11,7 +11,6 @@ import "openzeppelin-contracts/contracts/utils/cryptography/MessageHashUtils.sol
 import { console } from "forge-std/Test.sol";
 
 contract Wallet is BaseAccount, WalletStorage {
-	using ECDSA for bytes32;
 	using MessageHashUtils for bytes32;
 
 	bool public initialized;

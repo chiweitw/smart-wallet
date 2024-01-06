@@ -13,14 +13,6 @@ import "openzeppelin-contracts/contracts/utils/cryptography/MessageHashUtils.sol
 // import "../src/utils/UniswapV3Helper.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
-// interface IWETH is IERC20 {
-//     /// @notice Deposit ether to get wrapped ether
-//     function deposit() external payable;
-
-//     /// @notice Withdraw wrapped ether to get ether
-//     function withdraw(uint256) external;
-// }
-
 contract HelperTest is Test {
 	// constants
 	uint256 constant salt = 1234;
