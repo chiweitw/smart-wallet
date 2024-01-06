@@ -23,10 +23,10 @@ A smart crypto wallet built on smart contract technology enables powerful featur
 
 ## Use Cases
 
-- Security - Manage Assets Together
+- Security: Manage Assets Together
     - Multi-signature increases security by requiring multiple owners to agree on transactions before execution, which is perfect for families and groups to manage important assets together.
     - Leverage with Account Abstraction. Users don't need to have ETH in their EOA account to pay for gas fees. The gas fee can be paid directly by the contract wallet, which is super fair (splitting the gas fee).
-- Convenience - One-click Batch Transaction
+- Convenience: One-click Batch Transaction
     - With the power of batching, repeated tasks like multi-transfer/multi-swap can be conducted with only a single transaction, saving time and gas fees.
 - Future and Extensibility
     - With smart contracts and account abstraction, the possibilities for the future are limited only by imagination.
