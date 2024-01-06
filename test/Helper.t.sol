@@ -110,6 +110,10 @@ contract HelperTest is Test {
         wallet.confirmTransaction(0, createSignature(signedMessage(txns), confirmByKey, vm));
     }
 
+    function revokeBatchTransaction(WalletStorage.Transaction[] memory txns, uint256 revokeByKey) internal {
+        wallet.revokeConfirmation(0, createSignature(signedMessage(txns), revokeByKey, vm));
+    }
+
 	function signedMessage(WalletStorage.Transaction[] memory txns) internal pure returns (bytes32 message) {
 		return keccak256(abi.encodePacked(Wallet.submitTransaction.selector, abi.encode(txns)));
 	}

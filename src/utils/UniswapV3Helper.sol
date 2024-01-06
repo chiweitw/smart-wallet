@@ -19,13 +19,8 @@ contract UniswapV3Helper {
         uint24 poolFee,
         uint amountIn
     ) external returns (uint amountOut) {
-        console.log("msg sender uniswap", msg.sender);
-
         IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
-
-        console.log("debugger1");
         IERC20(tokenIn).approve(address(router), amountIn);
-        console.log("debugger1");
 
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
             .ExactInputSingleParams({

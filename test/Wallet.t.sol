@@ -61,6 +61,14 @@ contract WalletTest is HelperTest {
         wallet.submitTransaction(singleTransferTxns(), createSignature(signedInvalidMessage(), alicePrivateKey, vm));
     }
 
+    function testRevokeConfirmation() public {
+        vm.startPrank(alice);
+        // alice submit and confirm
+        submitBatchTransaction(singleTransferTxns(), alicePrivateKey);
+        // alice revoke
+        revokeBatchTransaction(singleTransferTxns(), alicePrivateKey);
+        assertEq(wallet.getConfirmationCount(0), 0);
+    }
 
     /*
      * Batch Transaction Benchmarking

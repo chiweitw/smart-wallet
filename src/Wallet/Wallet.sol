@@ -21,6 +21,7 @@ contract Wallet is BaseAccount, WalletStorage {
 	 */
 	event SubmitTransaction(address indexed owner, uint indexed nonce);
 	event ConfirmTransaction(address indexed owner, uint indexed nonce);
+	event RevokeConfirmation(address indexed owner, uint indexed nonce);
 	event ExecuteTransaction(address indexed owner, uint indexed nonce);
 	event ExecuteTransactionFailure(address indexed owner, uint indexed nonce);
 
@@ -58,7 +59,7 @@ contract Wallet is BaseAccount, WalletStorage {
 		return _entryPoint;
 	}
 
-	function initialize(address[] memory _owners, uint256 confirmationNum) external {
+	function initialize(address[] memory _owners, uint256 _confirmationNum) external {
 		require(initialized == false, "already initialized");
 		require(_owners.length > 1, "owners required must grater than 1");
 		require(_owners.length >= confirmationNum, "Num of confirmation is not sync with num of owner");
@@ -69,7 +70,7 @@ contract Wallet is BaseAccount, WalletStorage {
 			isOwner[_owners[i]] = true;
 		}
 		initialized = true;
-		_confirmationNum = confirmationNum;
+		confirmationNum = _confirmationNum;
 	}
 
 	/// @dev Allows an owner to submit and confirm a transaction.
@@ -88,15 +89,25 @@ contract Wallet is BaseAccount, WalletStorage {
 	/// @param signature Signer's signature.
 	function confirmTransaction(uint256 nonce, bytes calldata signature) public onlyOwnerOrEntryPoint {
 		Transaction[] memory txns = getTransaction(nonce);
-		address submitTransactionSigner = _getSigner(keccak256(abi.encodePacked(this.submitTransaction.selector, abi.encode(txns))), signature);	
+		address signer = _getSigner(keccak256(abi.encodePacked(this.submitTransaction.selector, abi.encode(txns))), signature);	
 
 		// Revert if already confirmed
-		require(!confirmations[nonce][submitTransactionSigner], "Already Confirmed");	
-		confirmations[nonce][submitTransactionSigner] = true;
+		require(!confirmations[nonce][signer], "Already Confirmed");	
+		confirmations[nonce][signer] = true;
 
 		emit ConfirmTransaction(msg.sender, nonce);
 		executeTransaction(nonce);
 	}
+
+    /// @dev Allows an owner to revoke a confirmation for a transaction.
+    /// @param nonce Transaction Nonce.
+    function revokeConfirmation(uint nonce, bytes calldata signature) public notExecuted(nonce) {
+		Transaction[] memory txns = getTransaction(nonce);
+		address signer = _getSigner(keccak256(abi.encodePacked(this.submitTransaction.selector, abi.encode(txns))), signature);	
+        confirmations[nonce][signer] = false;
+
+        emit RevokeConfirmation(msg.sender, nonce);
+    }
 
 	/// @dev Allows an owner or entry point to execute a confirmed transaction.
 	/// @param nonce Transaction Nonce.
@@ -133,7 +144,7 @@ contract Wallet is BaseAccount, WalletStorage {
 		for (uint i=0; i<owners.length; i++) {
 			if (confirmations[nonce][owners[i]])
 				count += 1;
-			if (count == _confirmationNum)
+			if (count == confirmationNum)
 				return true;
 		}
 		return false;
