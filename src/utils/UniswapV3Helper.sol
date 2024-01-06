@@ -54,6 +54,6 @@ contract UniswapV3Helper {
             amountIn: amountIn,
             amountOutMinimum: 0
         });
-        amountOut = router.exactInput(params);
+        amountOut = uniswap.exactInput(params);
     }
 }
