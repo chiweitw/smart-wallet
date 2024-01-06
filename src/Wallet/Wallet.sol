@@ -140,20 +140,6 @@ contract Wallet is BaseAccount, WalletStorage {
     }
 
 	/*
-     * Web3 functions
-     */
-	
-	// Todos
-	// Many to One
-	// function multiSwap(address[] memory tokenIns, address tokenOut, uint256[] memory amountIns) public {
-	// 	uint256 amountOut = 0;
-	// 	for (uint256 i=0; i<tokenIns.length; i++) {
-	// 		tokenIns[i].approve(address(uniswap), amountIns[i]);
-	// 		amountOut += uniswap.swapExactInputSingleHop(tokenIns[i], tokenOut, 3000, amountIns[i]);
-	// 	}
-	// }
-
-	/*
      * Version
      */
 	function VERSION() external view virtual returns (string memory) {
