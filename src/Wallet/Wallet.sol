@@ -16,17 +16,17 @@ contract Wallet is BaseAccount, WalletStorage {
 
 	bool public initialized;
 
-    /*
-     *  Events
-     */
+	/*
+	 *  Events
+	 */
 	event SubmitTransaction(address indexed owner, uint indexed nonce);
 	event ConfirmTransaction(address indexed owner, uint indexed nonce);
 	event ExecuteTransaction(address indexed owner, uint indexed nonce);
 	event ExecuteTransactionFailure(address indexed owner, uint indexed nonce);
 
-    /*
-     *  Modifiers
-     */
+	/*
+	 *  Modifiers
+	 */
 	modifier onlyAdmin {
 		require(msg.sender == admin, "Only Admin");
 		_; 
@@ -43,20 +43,20 @@ contract Wallet is BaseAccount, WalletStorage {
 	}
 
 	modifier notExecuted(uint256 nonce) {
-        require(!isExecuted[nonce], "Already Executed");
-        _;
-    }
+		require(!isExecuted[nonce], "Already Executed");
+		_;
+	}
 
-    /*
-     *  Constructor
-     */
+	/*
+	 *  Constructor
+	 */
 	constructor(IEntryPoint anEntryPoint) {
 		_entryPoint = anEntryPoint;
 	}
 
 	function entryPoint() public view virtual override returns (IEntryPoint) {
-        return _entryPoint;
-    }
+		return _entryPoint;
+	}
 
 	function initialize(address[] memory _owners, uint256 confirmationNum) external {
 		require(initialized == false, "already initialized");
@@ -72,8 +72,8 @@ contract Wallet is BaseAccount, WalletStorage {
 		_confirmationNum = confirmationNum;
 	}
 
-    /// @dev Allows an owner to submit and confirm a transaction.
-    /// @param txns Transactions.
+	/// @dev Allows an owner to submit and confirm a transaction.
+	/// @param txns Transactions.
 	/// @param signature Signer's signature.
 	function submitTransaction(Transaction[] memory txns, bytes calldata signature) public onlyOwnerOrEntryPoint {
 		_isValidSignature(keccak256(abi.encodePacked(this.submitTransaction.selector, abi.encode(txns))), signature);
@@ -83,8 +83,8 @@ contract Wallet is BaseAccount, WalletStorage {
 		emit SubmitTransaction(msg.sender, nonce);
 	}
 
-    /// @dev Allows an owner or entry point to confirm a transaction.
-    /// @param nonce Transaction Nonce.
+	/// @dev Allows an owner or entry point to confirm a transaction.
+	/// @param nonce Transaction Nonce.
 	/// @param signature Signer's signature.
 	function confirmTransaction(uint256 nonce, bytes calldata signature) public onlyOwnerOrEntryPoint {
 		Transaction[] memory txns = getTransaction(nonce);
@@ -98,8 +98,8 @@ contract Wallet is BaseAccount, WalletStorage {
 		executeTransaction(nonce);
 	}
 
-    /// @dev Allows an owner or entry point to execute a confirmed transaction.
-    /// @param nonce Transaction Nonce.
+	/// @dev Allows an owner or entry point to execute a confirmed transaction.
+	/// @param nonce Transaction Nonce.
 	function executeTransaction (uint256 nonce) public onlyOwnerOrEntryPoint notExecuted(nonce) {
 		if (isConfirmed(nonce)){
 			Transaction[] memory txns = transactions[nonce];
@@ -110,53 +110,52 @@ contract Wallet is BaseAccount, WalletStorage {
 		}
 	}
 
-    /// @dev Return list of transactions of specific nonce
-    /// @param nonce Transaction Nonce.
+	/// @dev Return list of transactions of specific nonce
+	/// @param nonce Transaction Nonce.
 	function getTransaction(uint256 nonce) public view virtual returns (Transaction[] memory) {
 		return transactions[nonce];
 	}
-	
-    /// @dev Returns number of confirmations of a transaction.
-    /// @param nonce Transaction Nonce.
-    /// @return count of confirmations.
+
+	/// @dev Returns number of confirmations of a transaction.
+	/// @param nonce Transaction Nonce.
+	/// @return count of confirmations.
 	function getConfirmationCount(uint256 nonce) public view virtual returns (uint256 count) {
-        for (uint i=0; i<owners.length; i++)
-            if (confirmations[nonce][owners[i]])
-                count += 1;
+		for (uint i=0; i<owners.length; i++)
+			if (confirmations[nonce][owners[i]])
+				count += 1;
 	}
 
-    /// @dev Returns the confirmation status of a transaction.
-    /// @param nonce Transaction Nonce.
-    /// @return Confirmation status.
-    function isConfirmed(uint nonce) public view returns (bool){
-        uint count = 0;
-        for (uint i=0; i<owners.length; i++) {
-            if (confirmations[nonce][owners[i]])
-                count += 1;
-            if (count == _confirmationNum)
-                return true;
-        }
+	/// @dev Returns the confirmation status of a transaction.
+	/// @param nonce Transaction Nonce.
+	/// @return Confirmation status.
+	function isConfirmed(uint nonce) public view returns (bool){
+		uint count = 0;
+		for (uint i=0; i<owners.length; i++) {
+			if (confirmations[nonce][owners[i]])
+				count += 1;
+			if (count == _confirmationNum)
+				return true;
+		}
 		return false;
-    }
+	}
 
 	/*
-     * Version
-     */
+	 * Version
+	 */
 	function VERSION() external view virtual returns (string memory) {
 		return "0.0.1";
 	}
 	/*
-     * Internal functions
-     */
-    function _call(address target, uint256 value, bytes memory data) internal {
-        (bool success, bytes memory result) = target.call{value : value}(data);
-        if (!success) {
-            assembly {
-                revert(add(result, 32), mload(result))
-            }
-        }
-    }
-
+	 * Internal functions
+	 */
+	function _call(address target, uint256 value, bytes memory data) internal {
+		(bool success, bytes memory result) = target.call{value : value}(data);
+		if (!success) {
+			assembly {
+				revert(add(result, 32), mload(result))
+			}
+		}
+	}
 
 	/// @dev execute a sequence of transactions.
 	/// @param txns Transactions.
@@ -182,51 +181,51 @@ contract Wallet is BaseAccount, WalletStorage {
 	}
 
 	/// For supporting ERC-4337
-    /// @dev validate the signature is valid for this message.
-    /// @param userOp validate the userOp.signature field
-    /// @param userOpHash convenient field: the hash of the request, to check the signature against
-    ///                   (also hashes the entrypoint and chain id)
-    /// @return validationData signature and time-range of this operation
+	/// @dev validate the signature is valid for this message.
+	/// @param userOp validate the userOp.signature field
+	/// @param userOpHash convenient field: the hash of the request, to check the signature against
+	///                   (also hashes the entrypoint and chain id)
+	/// @return validationData signature and time-range of this operation
 	function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
-        internal
-        virtual
-        override
-        returns (uint256 validationData)
-    {
+		internal
+		virtual
+		override
+		returns (uint256 validationData)
+	{
 		require(msg.sender == address(_entryPoint), "Only EntryPoint");
-        bytes32 hash = userOpHash.toEthSignedMessageHash();
+		bytes32 hash = userOpHash.toEthSignedMessageHash();
 		address signer = ECDSA.recover(hash, userOp.signature);
-        if (!isOwner[signer]) {
-            return SIG_VALIDATION_FAILED;
-        }
-        return 0;
-    }
+		if (!isOwner[signer]) {
+			return SIG_VALIDATION_FAILED;
+		}
+		return 0;
+	}
 
 	/// @dev Get Signer address from message hash and signature
 	/// @param hash message hash
 	/// @param signature Signer's signature.
-    function _getSigner(bytes32 hash, bytes memory signature) internal pure returns (address signer) {
+	function _getSigner(bytes32 hash, bytes memory signature) internal pure returns (address signer) {
 		bytes32 signedHash = MessageHashUtils.toEthSignedMessageHash(hash);
-        (uint8 v, bytes32 r, bytes32 s) = _splitSignature(signature);
+		(uint8 v, bytes32 r, bytes32 s) = _splitSignature(signature);
 		signer = ecrecover(signedHash, v, r, s);
-    }
+	}
 
 	/// @dev Split signature into v, r, s
 	/// @param signature Signer's signature.
-    function _splitSignature(bytes memory signature) private pure returns (uint8 v, bytes32 r, bytes32 s) {
-        require(signature.length == 65, "Invalid signature length");
+	function _splitSignature(bytes memory signature) private pure returns (uint8 v, bytes32 r, bytes32 s) {
+		require(signature.length == 65, "Invalid signature length");
 
-        assembly {
-            r := mload(add(signature, 32))
-            s := mload(add(signature, 64))
-            v := byte(0, mload(add(signature, 96)))
-        }
-    }
+		assembly {
+			r := mload(add(signature, 32))
+			s := mload(add(signature, 64))
+			v := byte(0, mload(add(signature, 96)))
+		}
+	}
 
 	/// @dev Validate signer is one of the owner
 	/// @param hash message hash
 	/// @param signature Signer's signature.
 	function _isValidSignature(bytes32 hash, bytes memory signature) internal view {
 		require(isOwner[_getSigner(hash, signature)], "Invalid signature");
-    }
+	}
 }
