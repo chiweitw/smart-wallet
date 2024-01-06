@@ -22,4 +22,12 @@ contract WalletFactoryTest is HelperTest {
         // check entryPoint
         assertEq(address(entryPoint), address(wallet._entryPoint()));
     }
+
+    function testCreateWalletDuplicateOwnerFailure() public {
+        vm.expectRevert("Construction failed");
+        address[] memory invalidOwners = new address[](2);
+        invalidOwners[0] = alice;
+        invalidOwners[1] = alice;
+        factory.createWallet(invalidOwners, confirmationNum, salt);
+    }
 }

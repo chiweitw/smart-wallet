@@ -62,10 +62,11 @@ contract Wallet is BaseAccount, WalletStorage {
 		require(initialized == false, "already initialized");
 		require(_owners.length >= confirmationNum, "Num of confirmation is not sync with num of owner");
 		admin = msg.sender;
-		owners = _owners;
+		// owners = _owners;
 		for (uint256 i=0; i < _owners.length; i++) {
-			require(_owners[i]!=address(0), "Invalid Owner");
+			require(_owners[i] != address(0) && !isOwner[_owners[i]], "Invalid Owner");
 			isOwner[_owners[i]] = true;
+			owners.push(_owners[i]);
 		}
 		initialized = true;
 		confirmationNum = _confirmationNum;
