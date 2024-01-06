@@ -60,7 +60,6 @@ contract Wallet is BaseAccount, WalletStorage {
 
 	function initialize(address[] memory _owners, uint256 _confirmationNum) external {
 		require(initialized == false, "already initialized");
-		require(_owners.length > 1, "owners required must grater than 1");
 		require(_owners.length >= confirmationNum, "Num of confirmation is not sync with num of owner");
 		admin = msg.sender;
 		owners = _owners;
