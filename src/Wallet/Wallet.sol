@@ -7,8 +7,6 @@ import { BaseAccount } from "account-abstraction/core/BaseAccount.sol";
 import { UserOperation } from "account-abstraction/interfaces/UserOperation.sol";
 import "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import "openzeppelin-contracts/contracts/utils/cryptography/MessageHashUtils.sol";
-import { UniswapV3Helper} from "../utils/UniswapV3Helper.sol";
-import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 import { console } from "forge-std/Test.sol";
 
@@ -17,7 +15,6 @@ contract Wallet is BaseAccount, WalletStorage {
 	using MessageHashUtils for bytes32;
 
 	bool public initialized;
-    UniswapV3Helper public uniswap;
 
     /*
      *  Events
@@ -55,7 +52,6 @@ contract Wallet is BaseAccount, WalletStorage {
      */
 	constructor(IEntryPoint anEntryPoint) {
 		_entryPoint = anEntryPoint;
-		uniswap = new UniswapV3Helper(ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564));
 	}
 
 	function entryPoint() public view virtual override returns (IEntryPoint) {
@@ -245,8 +241,6 @@ contract Wallet is BaseAccount, WalletStorage {
 	/// @param hash message hash
 	/// @param signature Signer's signature.
 	function _isValidSignature(bytes32 hash, bytes memory signature) internal view {
-		address signer = _getSigner(hash, signature);
-		console.log(signer);
 		require(isOwner[_getSigner(hash, signature)], "Invalid signature");
     }
 }

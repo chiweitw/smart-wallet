@@ -6,11 +6,9 @@ import "openzeppelin-contracts/contracts/interfaces/IERC20.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 contract UniswapV3Helper {
-    ISwapRouter public immutable uniswap;
+    // ISwapRouter public immutable uniswap;
 
-    constructor(ISwapRouter _uniswap) {
-        uniswap = _uniswap;
-    }
+    constructor() {}
 
     ISwapRouter constant router =
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
@@ -21,8 +19,13 @@ contract UniswapV3Helper {
         uint24 poolFee,
         uint amountIn
     ) external returns (uint amountOut) {
+        console.log("msg sender uniswap", msg.sender);
+
         IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
+
+        console.log("debugger1");
         IERC20(tokenIn).approve(address(router), amountIn);
+        console.log("debugger1");
 
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
             .ExactInputSingleParams({
@@ -36,7 +39,7 @@ contract UniswapV3Helper {
                 sqrtPriceLimitX96: 0
             });
 
-        amountOut = uniswap.exactInputSingle(params);
+        amountOut = router.exactInputSingle(params);
     }
 
     function swapExactInputMultiHop(
@@ -45,7 +48,7 @@ contract UniswapV3Helper {
         uint amountIn
     ) external returns (uint amountOut) {
         IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
-        IERC20(tokenIn).approve(address(uniswap), amountIn);
+        IERC20(tokenIn).approve(address(router), amountIn);
 
         ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
             path: path,
@@ -54,6 +57,6 @@ contract UniswapV3Helper {
             amountIn: amountIn,
             amountOutMinimum: 0
         });
-        amountOut = uniswap.exactInput(params);
+        amountOut = router.exactInput(params);
     }
 }

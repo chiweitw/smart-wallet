@@ -10,15 +10,16 @@ import { WalletFactory } from "../src/Wallet/WalletFactory.sol";
 import { TestERC20 } from "../src/Test/TestErc20.sol";
 import { WalletStorage } from "../src/Wallet/WalletStorage.sol";
 import "openzeppelin-contracts/contracts/utils/cryptography/MessageHashUtils.sol";
-import "../src/utils/UniswapV3Helper.sol";
+// import "../src/utils/UniswapV3Helper.sol";
+import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
-interface IWETH is IERC20 {
-    /// @notice Deposit ether to get wrapped ether
-    function deposit() external payable;
+// interface IWETH is IERC20 {
+//     /// @notice Deposit ether to get wrapped ether
+//     function deposit() external payable;
 
-    /// @notice Withdraw wrapped ether to get ether
-    function withdraw(uint256) external;
-}
+//     /// @notice Withdraw wrapped ether to get ether
+//     function withdraw(uint256) external;
+// }
 
 contract HelperTest is Test {
 	// constants
@@ -27,6 +28,7 @@ contract HelperTest is Test {
     address constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+	address constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
 	// Users
 	address[] owners;
 	IEntryPoint entryPoint;
@@ -48,10 +50,12 @@ contract HelperTest is Test {
 	uint256 confirmationNum = 2;
 	// Test Token
 	TestERC20 testErc20;
-	uint256 initBalance = 10 ether;
+	uint256 initBalance = 1000 ether;
 	uint256 initERC20Balance = 100e18;
 	// uniswap
-	UniswapV3Helper public uni;
+	// UniswapV3Helper public uni;
+	ISwapRouter constant router =
+        ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
 
 	function setUp() public virtual {
         string memory rpc = vm.envString("MAINNET_RPC_URL");
@@ -88,7 +92,7 @@ contract HelperTest is Test {
 		deal(address(testErc20), carol, initERC20Balance);
 		deal(address(testErc20), address(wallet), initERC20Balance);
 		// uniswap
-		uni = new UniswapV3Helper(ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564));
+		// uni = new UniswapV3Helper();
 		
 		vm.stopPrank();
 	}
@@ -110,6 +114,7 @@ contract HelperTest is Test {
 		return keccak256(abi.encodePacked(Wallet.submitTransaction.selector, abi.encode(txns)));
 	}
 
+	// Multi-transfer
 	function batchTxns() internal view returns (WalletStorage.Transaction[] memory txns) {
         txns = new WalletStorage.Transaction[](2);
         txns[0] = WalletStorage.Transaction({
@@ -125,8 +130,8 @@ contract HelperTest is Test {
 	}
 
 	// Multupswap
-	function multiswapTxns() internal view returns (WalletStorage.Transaction[] memory txns) {
-        txns = new WalletStorage.Transaction[](3);
+	function singleSwapTxns() internal view returns (WalletStorage.Transaction[] memory txns) {
+		txns = new WalletStorage.Transaction[](10);
         txns[0] = WalletStorage.Transaction({
             to: WETH,
             value: 1 ether,
@@ -135,13 +140,50 @@ contract HelperTest is Test {
 		txns[1] = WalletStorage.Transaction({
 			to: WETH,
 			value: 0,
-			data: abi.encodeWithSignature("approve(address,uint256)", address(uni), 1e18)
+			data: abi.encodeWithSignature("approve(address,uint256)", address(router), 1e18)
 		});
         txns[2] = WalletStorage.Transaction({
-            to: address(uni),
+            to: address(router),
             value: 0,
-            data: abi.encodeWithSignature("swapExactInputSingleHop(address,address,uint256,uint256)", WETH, DAI, 3000, 1e18)
+            data: abi.encodeWithSelector(router.exactInputSingle.selector, swapParams(WETH, DAI, address(wallet), 1e18))
         });
+	}
+
+
+	function multiswapTxns() internal view returns (WalletStorage.Transaction[] memory txns) {
+        txns = new WalletStorage.Transaction[](10);
+        txns[0] = WalletStorage.Transaction({
+            to: WETH,
+            value: 10 ether,
+            data: abi.encodeWithSignature("deposit()")
+        });
+		txns[1] = WalletStorage.Transaction({
+			to: WETH,
+			value: 0,
+			data: abi.encodeWithSignature("approve(address,uint256)", address(router), 10e18)
+		});
+		for (uint i = 2; i < 10; i++) {
+			txns[i] = WalletStorage.Transaction({
+				to: address(router),
+				value: 0,
+				data: abi.encodeWithSelector(router.exactInputSingle.selector, swapParams(WETH, DAI, address(wallet), 1e18))
+			});
+		}
+	}
+
+	function swapParams(address tokenIn, address tokenOut, address recipent, uint256 amountIn) 
+	internal view returns (ISwapRouter.ExactInputSingleParams memory params) {
+		params = ISwapRouter
+            .ExactInputSingleParams({
+                tokenIn: tokenIn,
+                tokenOut: tokenOut,
+                fee: 3000,
+                recipient: recipent,
+                deadline: block.timestamp,
+                amountIn: amountIn,
+                amountOutMinimum: 0,
+                sqrtPriceLimitX96: 0
+        	});
 	}
 
 

@@ -29,7 +29,7 @@ contract UniswapV3HelperTest is Test {
         string memory rpc = vm.envString("MAINNET_RPC_URL");
         vm.createSelectFork(rpc);
 
-        uni = new UniswapV3Helper(ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564));
+        uni = new UniswapV3Helper();
 
         // user
         user = makeAddr("user");

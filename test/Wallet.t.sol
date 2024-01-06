@@ -61,7 +61,33 @@ contract WalletTest is HelperTest {
         wallet.submitTransaction(batchTxns(), createSignature(signedInvalidMessage(), alicePrivateKey, vm));
     }
 
-    function testSubmitMultiSwapTransaction() public {
+    function testSingleSwap() public {
+        console.log("alice", alice);
+        console.log("bob", bob);
+        // submit Tx and 1st confirmation
+        vm.startPrank(alice);
+        vm.expectEmit(true, true, true, true);
+        emit SubmitTransaction(alice, 0);
+        vm.expectEmit(true, true, true, true);
+        emit ConfirmTransaction(alice, 0);
+        submitBatchTransaction(singleSwapTxns(), alicePrivateKey);
+        vm.stopPrank();
+        // 2nd confirmation and execution
+        vm.startPrank(bob);
+        vm.expectEmit(true, true, true, true);
+        emit ConfirmTransaction(bob, 0);
+        vm.expectEmit(true, true, true, true);
+        emit ExecuteTransaction(bob, 0);
+        confirmBatchTransaction(singleSwapTxns(), bobPrivateKey);
+        vm.stopPrank();
+
+        console.log("DAI", ERC20(DAI).balanceOf(address(wallet)));
+
+        assertEq(address(wallet).balance, initBalance - 1 ether);
+        assertGt(ERC20(DAI).balanceOf(address(wallet)), 0);
+    }
+
+    function testMultiSwap() public {
         console.log("alice", alice);
         console.log("bob", bob);
         // submit Tx and 1st confirmation
@@ -81,6 +107,9 @@ contract WalletTest is HelperTest {
         confirmBatchTransaction(multiswapTxns(), bobPrivateKey);
         vm.stopPrank();
 
-        console.log(ERC20(DAI).balanceOf(address(wallet)));
+        console.log("DAI", ERC20(DAI).balanceOf(address(wallet)));
+
+        assertEq(address(wallet).balance, initBalance - 10 ether);
+        assertGt(ERC20(DAI).balanceOf(address(wallet)), 0);
     }
 }
