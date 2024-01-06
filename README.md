@@ -1,66 +1,48 @@
-## Foundry
+## ERC4337 / Multi-signature Wallet
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+A smart crypto wallet built on smart contract technology enables powerful features such as batch transactions, multi-signature, and compatibility with ERC-4337 & Account Abstraction.
 
-Foundry consists of:
+## Features
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+- Wallet Factory
+    - You can obtain the address either before or after the account is created, which means you can start receiving ETH or tokens before ever sending a transaction by yourself.
+    - UUPS Proxy upgradable.
+- Multi-Signature
+    - Transactions can be executed only when confirmed by a predefined number of owners.
+    - Inspired by [gnosis](https://github.com/gnosis/MultiSigWallet/tree/master?tab=readme-ov-file).
+- ERC-4337 & Account Abstraction
+    - Allows users to enjoy a singular account with smart contract and EOA functionality.
+    - Users can send out the intent in the form of user operations and let the bundler validate and execute the operations through the entry point.
+    - Based on the [Eth-Infinitism repo](https://github.com/eth-infinitism/account-abstraction)
+- Batch Transaction
+    - Perform multiple transaction in one single batch, improve convenience and reduce gas cost.
 
-## Documentation
+## Use Cases
 
-https://book.getfoundry.sh/
+- Security - Manage Assets Together
+    - Multi-signature increases security by requiring multiple owners to agree on transactions before execution, which is perfect for families and groups to manage important assets together.
+    - Leverage with Account Abstraction. Users don't need to have ETH in their EOA account to pay for gas fees. The gas fee can be paid directly by the contract wallet, which is super fair (splitting the gas fee).
+- Convenience - One-click Batch Transaction
+    - With the power of batching, repeated tasks like multi-transfer/multi-swap can be conducted with only a single transaction, saving time and gas fees.
+- Future and Extensibility
+    - With smart contracts and account abstraction, the possibilities for the future are limited only by imagination.
 
-## Usage
+## Getting started
 
-### Build
 
-```shell
-$ forge build
+1. Install [foundry](https://github.com/foundry-rs/foundry).
+
+```
+curl -L https://foundry.paradigm.xyz | bash
 ```
 
-### Test
+2. Clone the repo and build
 
-```shell
-$ forge test
+```bash
+git git@github.com:chiweitw/smart-wallet.git
+cd smart-wallet
+forge install
+forge build
 ```
 
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+3. Check `.env.example` and obtain a `MAINNET_RPC_URL` from Alchemy or another service for running the Foundry test.
