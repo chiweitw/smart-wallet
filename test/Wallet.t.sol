@@ -27,7 +27,7 @@ contract WalletTest is HelperTest {
         emit SubmitTransaction(alice, 0);
         vm.expectEmit(true, true, true, true);
         emit ConfirmTransaction(alice, 0);
-        submitBatchTransaction(batchTxns(), alicePrivateKey);
+        submitBatchTransaction(singleTransferTxns(), alicePrivateKey);
         // epect execution failure when confirmation not enough
         vm.expectEmit(true, true, true, true);
         emit ExecuteTransactionFailure(alice, 0);
@@ -40,7 +40,7 @@ contract WalletTest is HelperTest {
         emit ConfirmTransaction(bob, 0);
         vm.expectEmit(true, true, true, true);
         emit ExecuteTransaction(bob, 0);
-        HelperTest.confirmBatchTransaction(batchTxns(), bobPrivateKey);
+        confirmBatchTransaction(singleTransferTxns(), bobPrivateKey);
         vm.stopPrank();
 
         assertEq(bob.balance, initBalance + 0.01 ether);
@@ -58,12 +58,62 @@ contract WalletTest is HelperTest {
         vm.startPrank(alice);
         // submit Tx and 1st confirmation
         vm.expectRevert("Invalid signature");
-        wallet.submitTransaction(batchTxns(), createSignature(signedInvalidMessage(), alicePrivateKey, vm));
+        wallet.submitTransaction(singleTransferTxns(), createSignature(signedInvalidMessage(), alicePrivateKey, vm));
     }
 
+
+    /*
+     * Batch Transaction Benchmarking
+     */
+
+    //  Single Transfer Transaction
+    function testSingleTransferTxns() public {
+        // submit Tx and 1st confirmation
+        vm.startPrank(alice);
+        vm.expectEmit(true, true, true, true);
+        emit SubmitTransaction(alice, 0);
+        vm.expectEmit(true, true, true, true);
+        emit ConfirmTransaction(alice, 0);
+        submitBatchTransaction(singleTransferTxns(), alicePrivateKey);
+        vm.stopPrank();
+        // 2nd confirmation and execution
+        vm.startPrank(bob);
+        vm.expectEmit(true, true, true, true);
+        emit ConfirmTransaction(bob, 0);
+        vm.expectEmit(true, true, true, true);
+        emit ExecuteTransaction(bob, 0);
+        confirmBatchTransaction(singleTransferTxns(), bobPrivateKey);
+        vm.stopPrank();
+
+        assertEq(bob.balance, initBalance + 0.01 ether);
+        assertEq(address(wallet).balance, initBalance - 0.01 ether);
+    }
+
+    // 10 Transfer Transaction in a batch
+    function testMultiTransfer() public {
+        // submit Tx and 1st confirmation
+        vm.startPrank(alice);
+        vm.expectEmit(true, true, true, true);
+        emit SubmitTransaction(alice, 0);
+        vm.expectEmit(true, true, true, true);
+        emit ConfirmTransaction(alice, 0);
+        submitBatchTransaction(multiTransferTxns(), alicePrivateKey);
+        vm.stopPrank();
+        // 2nd confirmation and execution
+        vm.startPrank(bob);
+        vm.expectEmit(true, true, true, true);
+        emit ConfirmTransaction(bob, 0);
+        vm.expectEmit(true, true, true, true);
+        emit ExecuteTransaction(bob, 0);
+        confirmBatchTransaction(multiTransferTxns(), bobPrivateKey);
+        vm.stopPrank();
+
+        assertEq(bob.balance, initBalance + 0.1 ether);
+        assertEq(address(wallet).balance, initBalance - 0.1 ether);
+    }
+
+    // Single Swap Transaction
     function testSingleSwap() public {
-        console.log("alice", alice);
-        console.log("bob", bob);
         // submit Tx and 1st confirmation
         vm.startPrank(alice);
         vm.expectEmit(true, true, true, true);
@@ -87,16 +137,15 @@ contract WalletTest is HelperTest {
         assertGt(ERC20(DAI).balanceOf(address(wallet)), 0);
     }
 
+    // 10 Swap Transaction in a batch
     function testMultiSwap() public {
-        console.log("alice", alice);
-        console.log("bob", bob);
         // submit Tx and 1st confirmation
         vm.startPrank(alice);
         vm.expectEmit(true, true, true, true);
         emit SubmitTransaction(alice, 0);
         vm.expectEmit(true, true, true, true);
         emit ConfirmTransaction(alice, 0);
-        submitBatchTransaction(multiswapTxns(), alicePrivateKey);
+        submitBatchTransaction(multiSwapTxns(), alicePrivateKey);
         vm.stopPrank();
         // 2nd confirmation and execution
         vm.startPrank(bob);
@@ -104,7 +153,7 @@ contract WalletTest is HelperTest {
         emit ConfirmTransaction(bob, 0);
         vm.expectEmit(true, true, true, true);
         emit ExecuteTransaction(bob, 0);
-        confirmBatchTransaction(multiswapTxns(), bobPrivateKey);
+        confirmBatchTransaction(multiSwapTxns(), bobPrivateKey);
         vm.stopPrank();
 
         console.log("DAI", ERC20(DAI).balanceOf(address(wallet)));

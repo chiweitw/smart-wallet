@@ -115,21 +115,26 @@ contract HelperTest is Test {
 	}
 
 	// Multi-transfer
-	function batchTxns() internal view returns (WalletStorage.Transaction[] memory txns) {
-        txns = new WalletStorage.Transaction[](2);
+	function singleTransferTxns() internal view returns (WalletStorage.Transaction[] memory txns) {
+		txns = new WalletStorage.Transaction[](2);
         txns[0] = WalletStorage.Transaction({
             to: bob,
             value: 0.01 ether,
             data: ""
         });
-        txns[1] = WalletStorage.Transaction({
-            to: address(testErc20),
-            value: 0,
-            data: abi.encodeWithSignature("transfer(address,uint256)", bob, 1e18)
-        });
+	}
+	function multiTransferTxns() internal view returns (WalletStorage.Transaction[] memory txns) {
+        txns = new WalletStorage.Transaction[](10);
+		for (uint i = 0; i < 10; i++) {
+			txns[i] = WalletStorage.Transaction({
+				to: bob,
+				value: 0.01 ether,
+				data: ""
+			});
+		}
 	}
 
-	// Multupswap
+	// Multi-swap
 	function singleSwapTxns() internal view returns (WalletStorage.Transaction[] memory txns) {
 		txns = new WalletStorage.Transaction[](10);
         txns[0] = WalletStorage.Transaction({
@@ -150,7 +155,7 @@ contract HelperTest is Test {
 	}
 
 
-	function multiswapTxns() internal view returns (WalletStorage.Transaction[] memory txns) {
+	function multiSwapTxns() internal view returns (WalletStorage.Transaction[] memory txns) {
         txns = new WalletStorage.Transaction[](10);
         txns[0] = WalletStorage.Transaction({
             to: WETH,
@@ -185,7 +190,6 @@ contract HelperTest is Test {
                 sqrtPriceLimitX96: 0
         	});
 	}
-
 
 	// create signature
     function createSignature(

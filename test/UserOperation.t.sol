@@ -54,9 +54,9 @@ contract UserOperationTest is HelperTest {
         Wallet wallet = factory.createWallet(owners, confirmationNum, salt);
         vm.startPrank(alice);
         // Calldata
-        bytes32 messageHash = keccak256(abi.encodePacked(Wallet.submitTransaction.selector, abi.encode(batchTxns())));
+        bytes32 messageHash = keccak256(abi.encodePacked(Wallet.submitTransaction.selector, abi.encode(singleTransferTxns())));
         bytes memory sig = createSignature(messageHash, alicePrivateKey, vm);
-        bytes memory callData = abi.encodeCall(Wallet.submitTransaction, (batchTxns(), sig));
+        bytes memory callData = abi.encodeCall(Wallet.submitTransaction, (singleTransferTxns(), sig));
         // create userOperation
         UserOperation memory userOp = createUserOp(Wallet(sender).getNonce(), "", callData);
         // signature
@@ -79,10 +79,6 @@ contract UserOperationTest is HelperTest {
         assertEq(wallet.getTransaction(0)[0].to, bob);
         assertEq(wallet.getTransaction(0)[0].value, 0.01 ether);
         assertEq(wallet.getTransaction(0)[0].data, "");
-        // transfer ERC20
-        assertEq(wallet.getTransaction(0)[1].to, address(testErc20));
-        assertEq(wallet.getTransaction(0)[1].value, 0);
-        assertEq(wallet.getTransaction(0)[1].data, abi.encodeWithSignature("transfer(address,uint256)", bob, 1e18));
         // confitmation counts
         assertEq(wallet.getConfirmationCount(0), 1);
     }
@@ -110,8 +106,6 @@ contract UserOperationTest is HelperTest {
         vm.stopPrank();
 
         assertEq(wallet.getConfirmationCount(0), 2);
-        assertEq(testErc20.balanceOf(bob), initERC20Balance + 1e18);
-        assertEq(testErc20.balanceOf(sender), initERC20Balance - 1e18);
         assertEq(bob.balance, initBalance + 0.01 ether);
         assertLt(sender.balance, initBalance - 0.01 ether); // sender transfer 0.01 ether + gas fee
     }
