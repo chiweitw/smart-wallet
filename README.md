@@ -4,6 +4,8 @@ A smart crypto wallet built on smart contract technology enables powerful featur
 
 ## Features
 
+- Wallet
+    - Manage and operate assets like a regular wallet.
 - Wallet Factory
     - You can obtain the address either before or after the account is created, which means you can start receiving ETH or tokens before ever sending a transaction by yourself.
     - UUPS Proxy upgradable.
@@ -16,6 +18,8 @@ A smart crypto wallet built on smart contract technology enables powerful featur
     - Based on the [Eth-Infinitism repo](https://github.com/eth-infinitism/account-abstraction)
 - Batch Transaction
     - Perform multiple transaction in one single batch, improve convenience and reduce gas cost.
+- Multi-Swap and Multi-Transfer
+    - Multiple and sequential transactions can be composed into one signed message and then submitted for confirmation. See the demo in the Foundry test code.
 
 ## Use Cases
 
