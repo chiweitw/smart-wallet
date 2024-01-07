@@ -143,7 +143,7 @@ contract Wallet is BaseAccount, WalletStorage {
 		for (uint i=0; i<owners.length; i++) {
 			if (confirmations[nonce][owners[i]])
 				count += 1;
-			if (count == confirmationNum)
+			if (count >= confirmationNum)
 				return true;
 		}
 		return false;
