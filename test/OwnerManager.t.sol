@@ -16,6 +16,13 @@ contract OwnerManagerTest is HelperTest {
         assertEq(wallet.confirmationNum(), 3);
     }
 
+    function testConfirmationNumberCannotMoreThanOwnerCountWhenAddOwner() public {
+        vm.startPrank(alice);
+        vm.expectRevert("Invalid confirmation number");
+        wallet.addOwnerAndConfirmationNumber(someone, 5);
+        vm.stopPrank();
+    }
+
     function testRemoveOwnerAndConfirmationNumber() public {
         vm.startPrank(alice);
         wallet.removeOwnerAndConfirmationNumber(carol, 1);
@@ -23,5 +30,12 @@ contract OwnerManagerTest is HelperTest {
 
         assertEq(wallet.isOwner(carol), false);
         assertEq(wallet.confirmationNum(), 1);
+    }
+
+    function testConfirmationNumberCannotMoreThanOwnerCountWhenRemoveOwner() public {
+        vm.startPrank(alice);
+        vm.expectRevert("Invalid confirmation number");
+        wallet.removeOwnerAndConfirmationNumber(carol, 3);
+        vm.stopPrank();
     }
 }

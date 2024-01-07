@@ -26,19 +26,6 @@ contract Wallet is BaseAccount, WalletStorage, Proxiable, OwnerManager {
 	event ExecuteTransaction(address indexed owner, uint indexed nonce);
 	event ExecuteTransactionFailure(address indexed owner, uint indexed nonce);
 
-	/*
-	 *  Modifiers
-	 */
-	// modifier onlyAdmin {
-	// 	require(msg.sender == admin, "Only Admin");
-	// 	_; 
-	// }
-
-	// modifier onlyOwner {
-	// 	require(isOwner(msg.sender) == true, "Only Owner");
-	// 	_;
-	// }
-
 	modifier onlyOwnerOrEntryPoint {
 		require(msg.sender == address(_entryPoint) || isOwner(msg.sender), "Only Owner or EntryPoint");
 		_;
