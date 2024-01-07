@@ -52,4 +52,26 @@ contract OwnerManagerTest is HelperTest {
         wallet.removeOwnerAndConfirmationNumber(carol, 3);
         vm.stopPrank();
     }
+
+    function testAddAdmin() public {
+        vm.startPrank(alice);
+        wallet.addAdmin(bob);
+        vm.stopPrank();
+
+        assertEq(wallet.isAdmin(bob), true);
+    }
+
+    function testAddAdminByNonAdmin() public {
+        vm.startPrank(bob);
+        vm.expectRevert("Only Admin");
+        wallet.addAdmin(carol);
+        vm.stopPrank();
+    }
+
+    function testAddNonOwnerToAdmin() public {
+        vm.startPrank(alice);
+        vm.expectRevert("Owner not existed");
+        wallet.addAdmin(address(0));
+        vm.stopPrank();
+    }
 }
