@@ -14,6 +14,7 @@ contract OwnerManagerTest is HelperTest {
 
         assertEq(wallet.isOwner(someone), true);
         assertEq(wallet.confirmationNum(), 3);
+        assertEq(wallet.getOwnerCount(), 4);
     }
 
     function testOnlyAdminCanAddOwner() public {
@@ -23,7 +24,7 @@ contract OwnerManagerTest is HelperTest {
         vm.stopPrank();
     }
 
-    function testConfirmationNumberCannotMoreThanOwnerCountWhenAddOwner() public {
+    function testConfirmationNumberCannotMoreThanOwnerWhenAdd() public {
         vm.startPrank(alice);
         vm.expectRevert("Invalid confirmation number");
         wallet.addOwnerAndConfirmationNumber(someone, 5);
@@ -37,6 +38,7 @@ contract OwnerManagerTest is HelperTest {
 
         assertEq(wallet.isOwner(carol), false);
         assertEq(wallet.confirmationNum(), 1);
+        assertEq(wallet.getOwnerCount(), 2);
     }
 
     function testOnlyAdminCanRemoveOwner() public {
@@ -46,7 +48,7 @@ contract OwnerManagerTest is HelperTest {
         vm.stopPrank();
     }
 
-    function testConfirmationNumberCannotMoreThanOwnerCountWhenRemoveOwner() public {
+    function testConfirmationNumberCannotMoreThanOwnerWhenRemove() public {
         vm.startPrank(alice);
         vm.expectRevert("Invalid confirmation number");
         wallet.removeOwnerAndConfirmationNumber(carol, 3);
@@ -72,6 +74,21 @@ contract OwnerManagerTest is HelperTest {
         vm.startPrank(alice);
         vm.expectRevert("Owner not existed");
         wallet.addAdmin(address(0));
+        vm.stopPrank();
+    }
+
+    function testLeaveParty() public {
+        vm.startPrank(bob);
+        wallet.leaveParty();
+        vm.stopPrank();
+        assertEq(wallet.isOwner(bob), false);
+        assertEq(wallet.getOwnerCount(), 2);
+    }
+
+    function testLeavePartyAdminCannotBeZero() public {
+        vm.startPrank(alice);
+        vm.expectRevert("Admin cannot be zero");
+        wallet.leaveParty();
         vm.stopPrank();
     }
 }

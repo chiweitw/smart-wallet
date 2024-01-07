@@ -73,13 +73,18 @@ contract OwnerManager {
     /// @dev Owner can leave the party by their self.
     function leaveParty() public onlyOwner {
         if (isAdmin(msg.sender)) {
-            require(admins.length > 1, "At least one admin!"); // Must have at least one admin.
+            require(admins.length > 1, "Admin cannot be zero"); // Must have at least one admin.
         }
         for (uint256 i=0; i<owners.length; i++) {
             if (owners[i] == msg.sender) {
                 _removeOwner(i); 
             }
         }
+    }
+
+    /// @dev Get the number of owners.
+    function getOwnerCount() public view returns (uint256) {
+        return owners.length;
     }
 
     /// @dev Change the confirmation number.
