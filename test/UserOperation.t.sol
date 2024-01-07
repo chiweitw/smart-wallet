@@ -50,13 +50,11 @@ contract UserOperationTest is HelperTest {
     }
 
     function testSubmitTransaction() public {
-        // Create wallet
-        Wallet wallet = factory.createWallet(owners, confirmationNum, salt);
         vm.startPrank(alice);
         // Calldata
-        bytes32 messageHash = keccak256(abi.encodePacked(Wallet.submitTransaction.selector, abi.encode(singleTransferTxns())));
+        bytes32 messageHash = keccak256(abi.encodePacked(Wallet.submitTransaction.selector, abi.encode(multiTransferTxns(1))));
         bytes memory sig = createSignature(messageHash, alicePrivateKey, vm);
-        bytes memory callData = abi.encodeCall(Wallet.submitTransaction, (singleTransferTxns(), sig));
+        bytes memory callData = abi.encodeCall(Wallet.submitTransaction, (multiTransferTxns(1), sig));
         // create userOperation
         UserOperation memory userOp = createUserOp(Wallet(sender).getNonce(), "", callData);
         // signature
@@ -77,7 +75,7 @@ contract UserOperationTest is HelperTest {
         // Check transaction submitted
         // transfer ETH
         assertEq(wallet.getTransaction(0)[0].to, bob);
-        assertEq(wallet.getTransaction(0)[0].value, 0.01 ether);
+        assertEq(wallet.getTransaction(0)[0].value, 1 ether);
         assertEq(wallet.getTransaction(0)[0].data, "");
         // confitmation counts
         assertEq(wallet.getConfirmationCount(0), 1);
@@ -85,7 +83,6 @@ contract UserOperationTest is HelperTest {
 
     function testConfirmAndExecuteTransaction() public {
         testSubmitTransaction();
-
         WalletStorage.Transaction[] memory txns = wallet.getTransaction(0);
         bytes32 messageHash = keccak256(abi.encodePacked(Wallet.submitTransaction.selector, abi.encode(txns)));
         bytes memory sig = createSignature(messageHash, bobPrivateKey, vm);
@@ -106,8 +103,8 @@ contract UserOperationTest is HelperTest {
         vm.stopPrank();
 
         assertEq(wallet.getConfirmationCount(0), 2);
-        assertEq(bob.balance, initBalance + 0.01 ether);
-        assertLt(sender.balance, initBalance - 0.01 ether); // sender transfer 0.01 ether + gas fee
+        assertEq(bob.balance, initBalance + 1 ether);
+        assertLt(sender.balance, initBalance - 1 ether); // sender transfer 1 ether + gas fee
     }
 
     function createUserOp(uint256 nonce, bytes memory initCode, bytes memory callData) public view returns (UserOperation memory) {

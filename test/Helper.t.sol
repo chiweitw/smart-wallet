@@ -38,11 +38,12 @@ contract HelperTest is Test {
 	WalletFactory factory;
 	// Wallet
 	Wallet wallet;
+	Wallet singleConfirmWallet;
 	uint256 confirmationNum = 2;
 	// Test Token
 	TestERC20 testErc20;
-	uint256 initBalance = 1000 ether;
-	uint256 initERC20Balance = 100e18;
+	uint256 initBalance = 1000000 ether;
+	uint256 initERC20Balance = 1000000e18;
 	// uniswap
 	// UniswapV3Helper public uni;
 	ISwapRouter constant router =
@@ -68,6 +69,7 @@ contract HelperTest is Test {
 		// Create Wallet
 		sender = factory.getAddress(owners, confirmationNum, salt);
 		wallet = factory.createWallet(owners, confirmationNum, salt);
+		singleConfirmWallet = factory.createWallet(owners, 1, 4321);
 		// set ERC20 Token
 		testErc20 = new TestERC20();
 		// init balance
@@ -76,29 +78,29 @@ contract HelperTest is Test {
 		deal(bob, initBalance);
 		deal(carol, initBalance);
 		deal(address(wallet), initBalance);
+		deal(address(singleConfirmWallet), initBalance);
 		// init ERC20 balance
 		deal(address(testErc20), admin, initERC20Balance);
 		deal(address(testErc20), alice, initERC20Balance);
 		deal(address(testErc20), bob, initERC20Balance);
 		deal(address(testErc20), carol, initERC20Balance);
 		deal(address(testErc20), address(wallet), initERC20Balance);
-		// uniswap
-		// uni = new UniswapV3Helper();
-		
+		deal(address(testErc20), address(singleConfirmWallet), initERC20Balance);
+
 		vm.stopPrank();
 	}
 
 	// Batch Transaction for general test purpose
-    function submitBatchTransaction(WalletStorage.Transaction[] memory txns, uint256 submitByKey) internal {
-        wallet.submitTransaction(txns, createSignature(signedMessage(txns), submitByKey, vm));
+    function submitBatchTransaction(Wallet _wallet, WalletStorage.Transaction[] memory txns, uint256 submitByKey) internal {
+        _wallet.submitTransaction(txns, createSignature(signedMessage(txns), submitByKey, vm));
     }
 
-    function confirmBatchTransaction(WalletStorage.Transaction[] memory txns, uint256 confirmByKey) internal {
-        wallet.confirmTransaction(0, createSignature(signedMessage(txns), confirmByKey, vm));
+    function confirmBatchTransaction(Wallet _wallet, WalletStorage.Transaction[] memory txns, uint256 confirmByKey) internal {
+        _wallet.confirmTransaction(0, createSignature(signedMessage(txns), confirmByKey, vm));
     }
 
-    function revokeBatchTransaction(WalletStorage.Transaction[] memory txns, uint256 revokeByKey) internal {
-        wallet.revokeConfirmation(0, createSignature(signedMessage(txns), revokeByKey, vm));
+    function revokeBatchTransaction(Wallet _wallet, WalletStorage.Transaction[] memory txns, uint256 revokeByKey) internal {
+        _wallet.revokeConfirmation(0, createSignature(signedMessage(txns), revokeByKey, vm));
     }
 
 	function signedMessage(WalletStorage.Transaction[] memory txns) internal pure returns (bytes32 message) {
@@ -110,63 +112,35 @@ contract HelperTest is Test {
 	}
 
 	// Multi-transfer
-	function singleTransferTxns() internal view returns (WalletStorage.Transaction[] memory txns) {
-		txns = new WalletStorage.Transaction[](2);
-        txns[0] = WalletStorage.Transaction({
-            to: bob,
-            value: 0.01 ether,
-            data: ""
-        });
-	}
-	function multiTransferTxns() internal view returns (WalletStorage.Transaction[] memory txns) {
-        txns = new WalletStorage.Transaction[](10);
-		for (uint i = 0; i < 10; i++) {
+	function multiTransferTxns(uint256 num) internal view returns (WalletStorage.Transaction[] memory txns) {
+        txns = new WalletStorage.Transaction[](num);
+		for (uint i = 0; i < num; i++) {
 			txns[i] = WalletStorage.Transaction({
 				to: bob,
-				value: 0.01 ether,
+				value: 1 ether,
 				data: ""
 			});
 		}
 	}
 
 	// Multi-swap
-	function singleSwapTxns() internal view returns (WalletStorage.Transaction[] memory txns) {
-		txns = new WalletStorage.Transaction[](10);
+	function multiSwapTxns(uint256 num) internal view returns (WalletStorage.Transaction[] memory txns) {
+        txns = new WalletStorage.Transaction[](num+2);
         txns[0] = WalletStorage.Transaction({
             to: WETH,
-            value: 1 ether,
+            value: num * 1 ether,
             data: abi.encodeWithSignature("deposit()")
         });
 		txns[1] = WalletStorage.Transaction({
 			to: WETH,
 			value: 0,
-			data: abi.encodeWithSignature("approve(address,uint256)", address(router), 1e18)
+			data: abi.encodeWithSignature("approve(address,uint256)", address(router), num * 1e18)
 		});
-        txns[2] = WalletStorage.Transaction({
-            to: address(router),
-            value: 0,
-            data: abi.encodeWithSelector(router.exactInputSingle.selector, swapParams(WETH, DAI, address(wallet), 1e18))
-        });
-	}
-
-
-	function multiSwapTxns() internal view returns (WalletStorage.Transaction[] memory txns) {
-        txns = new WalletStorage.Transaction[](10);
-        txns[0] = WalletStorage.Transaction({
-            to: WETH,
-            value: 10 ether,
-            data: abi.encodeWithSignature("deposit()")
-        });
-		txns[1] = WalletStorage.Transaction({
-			to: WETH,
-			value: 0,
-			data: abi.encodeWithSignature("approve(address,uint256)", address(router), 10e18)
-		});
-		for (uint i = 2; i < 10; i++) {
+		for (uint i = 2; i < num+2; i++) {
 			txns[i] = WalletStorage.Transaction({
 				to: address(router),
 				value: 0,
-				data: abi.encodeWithSelector(router.exactInputSingle.selector, swapParams(WETH, DAI, address(wallet), 1e18))
+				data: abi.encodeWithSelector(router.exactInputSingle.selector, swapParams(WETH, DAI, address(singleConfirmWallet), 1e18))
 			});
 		}
 	}
