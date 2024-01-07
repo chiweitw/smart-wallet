@@ -8,6 +8,8 @@ A smart crypto wallet built on smart contract technology enables powerful featur
     - Manage and operate assets as a regular crypto wallet.
     - You can obtain the address either before or after the account is created, which means you can start receiving ETH or tokens before ever sending a transaction by yourself.
     - UUPS Proxy Upgradable ([ERC-1822](https://eips.ethereum.org/EIPS/eip-1822))
+- Owner Manager
+    - Manages admins, owners and the confirmation number.
 - Multi-Signature
     - Transactions can be executed only when confirmed by a predefined `confirmationNum`.
     - Owner can revoke confirmation.
