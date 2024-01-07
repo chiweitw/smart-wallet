@@ -5,6 +5,7 @@ import { Test, console } from "forge-std/Test.sol";
 import { WalletFactory } from "../src/Wallet/WalletFactory.sol";
 import { Wallet } from "../src/Wallet/Wallet.sol";
 import { HelperTest } from "./Helper.t.sol";
+import { WalletV2 } from "../src/Wallet/WalletV2.sol";
 
 contract WalletFactoryTest is HelperTest {
     function testCreateWallet() public {
@@ -29,5 +30,23 @@ contract WalletFactoryTest is HelperTest {
         invalidOwners[0] = alice;
         invalidOwners[1] = alice;
         factory.createWallet(invalidOwners, confirmationNum, salt);
+    }
+
+    function testUpgrade() public {
+        vm.startPrank(alice);
+
+        WalletV2 newImplementation = new WalletV2();
+
+
+        assertEq(Wallet(sender).proxiableUUID(), keccak256("PROXIABLE"));
+
+        Wallet(sender).upgradeTo(address(newImplementation));
+
+        // (bool success,) = sender.delegatecall(abi.encodeWithSignature("upgradeTo(address)", address(newImplementation)));
+        // require(success);
+
+        vm.stopPrank();
+
+        assertEq(WalletV2(sender).VERSION(), "0.0.2");
     }
 }

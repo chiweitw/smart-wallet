@@ -25,7 +25,7 @@ contract WalletFactory {
         } 
         // Else deploy the new wallet.
         ret = Wallet(payable(new UUPSProxy{salt : bytes32(salt)}(
-                abi.encodeCall(Wallet.initialize,(owners, confirmationNum)), //constructData 
+                abi.encodeCall(Wallet.initialize, (owners, confirmationNum)), //constructData 
                 address(walletImplementation) //contract logic
             )));
     }

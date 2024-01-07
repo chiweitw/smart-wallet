@@ -7,10 +7,11 @@ import { BaseAccount } from "account-abstraction/core/BaseAccount.sol";
 import { UserOperation } from "account-abstraction/interfaces/UserOperation.sol";
 import "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import "openzeppelin-contracts/contracts/utils/cryptography/MessageHashUtils.sol";
+import { Proxiable } from "../utils/Proxiable.sol";
 
 import { console } from "forge-std/Test.sol";
 
-contract Wallet is BaseAccount, WalletStorage {
+contract Wallet is BaseAccount, WalletStorage, Proxiable {
 	using MessageHashUtils for bytes32;
 
 	bool public initialized;
@@ -150,8 +151,12 @@ contract Wallet is BaseAccount, WalletStorage {
 	}
 
 	/*
-	 * Version
+	 * Upgradable
 	 */
+	function upgradeTo(address newImplementation) onlyOwner public {
+		updateCodeAddress(newImplementation);
+	}
+
 	function VERSION() external view virtual returns (string memory) {
 		return "0.0.1";
 	}
