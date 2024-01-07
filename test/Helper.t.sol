@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import { Test, console, Vm } from "forge-std/Test.sol";
-import { UUPSProxy } from "../src/UUPSProxy.sol";
+import { UUPSProxy } from "../src/utils/UUPSProxy.sol";
 import { Wallet } from "../src/Wallet/Wallet.sol";
 import { IEntryPoint } from "account-abstraction/interfaces/IEntryPoint.sol";
 import { EntryPoint } from "account-abstraction/core/EntryPoint.sol";
@@ -10,7 +10,6 @@ import { WalletFactory } from "../src/Wallet/WalletFactory.sol";
 import { TestERC20 } from "../src/Test/TestErc20.sol";
 import { WalletStorage } from "../src/Wallet/WalletStorage.sol";
 import "openzeppelin-contracts/contracts/utils/cryptography/MessageHashUtils.sol";
-// import "../src/utils/UniswapV3Helper.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 contract HelperTest is Test {

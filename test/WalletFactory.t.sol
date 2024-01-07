@@ -34,19 +34,10 @@ contract WalletFactoryTest is HelperTest {
 
     function testUpgrade() public {
         vm.startPrank(alice);
-
-        WalletV2 newImplementation = new WalletV2();
-
-
         assertEq(Wallet(sender).proxiableUUID(), keccak256("PROXIABLE"));
-
+        WalletV2 newImplementation = new WalletV2();
         Wallet(sender).upgradeTo(address(newImplementation));
-
-        // (bool success,) = sender.delegatecall(abi.encodeWithSignature("upgradeTo(address)", address(newImplementation)));
-        // require(success);
-
         vm.stopPrank();
-
         assertEq(WalletV2(sender).VERSION(), "0.0.2");
     }
 }

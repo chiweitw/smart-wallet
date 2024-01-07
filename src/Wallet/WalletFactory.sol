@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 import "./Wallet.sol";
 import { IEntryPoint } from "account-abstraction/interfaces/IEntryPoint.sol";
 import "@openzeppelin/contracts/utils/Create2.sol";
-import "../UUPSProxy.sol";
+import "../utils/UUPSProxy.sol";
 
 // contract for creating wallets. 
 contract WalletFactory {
