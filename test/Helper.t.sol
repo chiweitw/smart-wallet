@@ -88,10 +88,6 @@ contract HelperTest is Test {
 		vm.stopPrank();
 	}
 
-	function signedInvalidMessage() internal pure returns (bytes32 message) {
-		return keccak256(abi.encodePacked(Wallet.submitTransaction.selector, abi.encode("")));
-	}
-
 	// Batch Transaction for general test purpose
     function submitBatchTransaction(WalletStorage.Transaction[] memory txns, uint256 submitByKey) internal {
         wallet.submitTransaction(txns, createSignature(signedMessage(txns), submitByKey, vm));
@@ -107,6 +103,10 @@ contract HelperTest is Test {
 
 	function signedMessage(WalletStorage.Transaction[] memory txns) internal pure returns (bytes32 message) {
 		return keccak256(abi.encodePacked(Wallet.submitTransaction.selector, abi.encode(txns)));
+	}
+
+	function signedInvalidMessage() internal pure returns (bytes32 message) {
+		return keccak256(abi.encodePacked(Wallet.submitTransaction.selector, abi.encode("")));
 	}
 
 	// Multi-transfer

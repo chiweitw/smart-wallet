@@ -8,10 +8,11 @@ import { UserOperation } from "account-abstraction/interfaces/UserOperation.sol"
 import "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import "openzeppelin-contracts/contracts/utils/cryptography/MessageHashUtils.sol";
 import { Proxiable } from "../utils/Proxiable.sol";
+import { OwnerManager } from "../base/OwnerManager.sol";
 
 import { console } from "forge-std/Test.sol";
 
-contract Wallet is BaseAccount, WalletStorage, Proxiable {
+contract Wallet is BaseAccount, WalletStorage, Proxiable, OwnerManager {
 	using MessageHashUtils for bytes32;
 
 	bool public initialized;
@@ -28,18 +29,18 @@ contract Wallet is BaseAccount, WalletStorage, Proxiable {
 	/*
 	 *  Modifiers
 	 */
-	modifier onlyAdmin {
-		require(msg.sender == admin, "Only Admin");
-		_; 
-	}
+	// modifier onlyAdmin {
+	// 	require(msg.sender == admin, "Only Admin");
+	// 	_; 
+	// }
 
-	modifier onlyOwner {
-		require(isOwner[msg.sender] == true, "Only Owner");
-		_;
-	}
+	// modifier onlyOwner {
+	// 	require(isOwner(msg.sender) == true, "Only Owner");
+	// 	_;
+	// }
 
 	modifier onlyOwnerOrEntryPoint {
-		require(msg.sender == address(_entryPoint) || isOwner[msg.sender], "Only Owner or EntryPoint");
+		require(msg.sender == address(_entryPoint) || isOwner(msg.sender), "Only Owner or EntryPoint");
 		_;
 	}
 
@@ -62,15 +63,13 @@ contract Wallet is BaseAccount, WalletStorage, Proxiable {
 	function initialize(address[] memory _owners, uint256 _confirmationNum) external {
 		require(initialized == false, "already initialized");
 		require(_owners.length >= confirmationNum, "Num of confirmation is not sync with num of owner");
-		admin = msg.sender;
-		// owners = _owners;
 		for (uint256 i=0; i < _owners.length; i++) {
-			require(_owners[i] != address(0) && !isOwner[_owners[i]], "Invalid Owner");
-			isOwner[_owners[i]] = true;
+			require(_owners[i] != address(0) && !isOwner(_owners[i]), "Invalid Owner");
 			owners.push(_owners[i]);
 		}
-		initialized = true;
+		admins.push(_owners[0]); // By default, the first owner is admin.
 		confirmationNum = _confirmationNum;
+		initialized = true;
 	}
 
 	/// @dev Allows an owner to submit and confirm a transaction.
@@ -210,7 +209,7 @@ contract Wallet is BaseAccount, WalletStorage, Proxiable {
 		require(msg.sender == address(_entryPoint), "Only EntryPoint");
 		bytes32 hash = userOpHash.toEthSignedMessageHash();
 		address signer = ECDSA.recover(hash, userOp.signature);
-		if (!isOwner[signer]) {
+		if (!isOwner(signer)) {
 			return SIG_VALIDATION_FAILED;
 		}
 		return 0;
@@ -241,6 +240,6 @@ contract Wallet is BaseAccount, WalletStorage, Proxiable {
 	/// @param hash message hash
 	/// @param signature Signer's signature.
 	function _isValidSignature(bytes32 hash, bytes memory signature) internal view {
-		require(isOwner[_getSigner(hash, signature)], "Invalid signature");
+		require(isOwner(_getSigner(hash, signature)), "Invalid signature");
 	}
 }
