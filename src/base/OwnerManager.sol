@@ -43,6 +43,7 @@ contract OwnerManager {
     function addOwnerAndConfirmationNumber(address _owner, uint256 _confirmationNum) public onlyAdmin {
         require(_owner != address(0) && !isOwner(_owner), "Invalid Owner");
         owners.push(_owner);
+        require(_confirmationNum <= owners.length, "Invalid confirmation number");
         if (_confirmationNum != confirmationNum) {
             _changeConfirmationNum(_confirmationNum);
         }
@@ -56,6 +57,7 @@ contract OwnerManager {
         for (uint i=0; i<owners.length; i++) {
             if (owners[i] == _owner) _removeOwner(i); 
         }
+        require(_confirmationNum <= owners.length, "Invalid confirmation number");
         if (_confirmationNum != confirmationNum) {
             _changeConfirmationNum(_confirmationNum);
         }

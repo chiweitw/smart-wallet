@@ -15,4 +15,13 @@ contract OwnerManagerTest is HelperTest {
         assertEq(wallet.isOwner(someone), true);
         assertEq(wallet.confirmationNum(), 3);
     }
+
+    function testRemoveOwnerAndConfirmationNumber() public {
+        vm.startPrank(alice);
+        wallet.removeOwnerAndConfirmationNumber(carol, 1);
+        vm.stopPrank();
+
+        assertEq(wallet.isOwner(carol), false);
+        assertEq(wallet.confirmationNum(), 1);
+    }
 }
