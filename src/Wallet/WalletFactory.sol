@@ -45,5 +45,4 @@ contract WalletFactory {
             )
         );
     }
-
 }
