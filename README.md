@@ -2,8 +2,9 @@
 
 A smart crypto wallet built on smart contract technology enables powerful features such as batch transactions, multi-signature, and compatibility with ERC-4337 & Account Abstraction.
 
-## Features
+![image](https://github.com/chiweitw/smart-wallet/assets/34131145/65c75c6b-1082-44b7-b7ee-bc449e1a170f)
 
+## Features
 - Wallet & Factory
     - Manage and operate assets as a regular crypto wallet.
     - You can obtain the address either before or after the account is created, which means you can start receiving ETH or tokens before ever sending a transaction by yourself.
