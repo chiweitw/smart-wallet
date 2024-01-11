@@ -1,9 +1,7 @@
 ## ERC4337 / Multi-signature Wallet
 
 A smart crypto wallet built on smart contract technology enables powerful features such as batch transactions, multi-signature, and compatibility with ERC-4337 & Account Abstraction.
-
-![image](https://github.com/chiweitw/smart-wallet/assets/34131145/65c75c6b-1082-44b7-b7ee-bc449e1a170f)
-
+<img width="1155" alt="Smart-Wallet" src="https://github.com/chiweitw/smart-wallet/assets/34131145/2da0d66a-6e8d-43b5-b5de-9f802b6ad84a">
 ## Features
 - Wallet & Factory
     - Manage and operate assets as a regular crypto wallet.
